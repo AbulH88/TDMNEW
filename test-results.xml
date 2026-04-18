@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="Data Retrieval - POST /api/retrieve-data" time="1.537298" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="L203302">
+		<testcase name="Returns 400 when required params are missing" time="0.084597" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Retrieves data given lastname contains 'LAST'" time="0.785957" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Negative scenario - assumes no data will be retrieved with firstname 'negativeScenarioNoData'" time="0.665329" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+	</testsuite>
+	<testsuite name="Data Create - POST /api/create-data" time="1.288665" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="L203302">
+		<testcase name="Returns 400 when required params are missing" time="0.008222" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Creates intake data using basic sample payload" time="0.659042" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Creates intake data using payload with parameters" time="0.620351" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+	</testsuite>
+	<testsuite name="Data Delete - POST /api/delete-data" time="1.858556" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="L203302">
+		<testcase name="Returns 400 when required params are missing" time="0.008609" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Returns 500 when patientnumber is null" time="0.436327" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Returns 500 when patientnumber is empty" time="0.431774" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Returns 500 when patientnumber is non-numeric" time="0.448018" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+		<testcase name="Returns 500 when record not found (non-existent patientnumber)" time="0.533108" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+	</testsuite>
+	<testsuite name="End-to-End Flow - create, retrieve, and delete data" time="2.446541" disabled="0" errors="0" tests="1" failures="0" skipped="0" hostname="L203302">
+		<testcase name="Creates a patient, retrieves it, and deletes it" time="2.446332" classname="test" file="C:\Users\ddmorac\Documents\tdm_project\server\src\test.ts"/>
+	</testsuite>
+	<!-- tests 12 -->
+	<!-- suites 4 -->
+	<!-- pass 12 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 9330.2101 -->
+</testsuites>
