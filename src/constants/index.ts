@@ -10,6 +10,10 @@ export const API_ENDPOINTS = {
     EXTERNAL_CALL: '/api/external-call',
     TEST_RESULTS: '/api/test-results',
     RUN_TESTS: '/api/run-tests',
+    LOGIN: '/api/auth/login',
+    LOGOUT: '/api/auth/logout',
+    ME: '/api/auth/me',
+    USERS: '/api/users',
 } as const;
 
 

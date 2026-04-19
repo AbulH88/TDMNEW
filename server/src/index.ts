@@ -1,23 +1,34 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import oracledb from 'oracledb';
 oracledb.fetchAsString = [oracledb.CLOB]; // ensures we can return CLOB columns as normal strings
 import fetch from 'node-fetch';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import fs from 'fs';
 
 // Modular services
 import { getService, allowedServiceTypes } from "./services/registry";
 import type { ServiceContext } from "./services/types";
+import { authMiddleware, requireAdmin, requirePermission, AuthenticatedRequest } from './middleware/auth';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const app = express();
 const port = Number(process.env.PORT) || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const USERS_FILE = path.join(__dirname, '../data/users.json');
 
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Request logging middleware for debugging
 app.use((req, res, next) => {
@@ -270,6 +281,160 @@ function formatDob(date: Date): string {
 }
 
 // ================================================================
+//                          AUTH ENDPOINTS
+// ================================================================
+
+app.post('/api/auth/login', async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return errorResponse(res, 400, 'Username and password are required.');
+    }
+
+    try {
+        if (!fs.existsSync(USERS_FILE)) {
+            return errorResponse(res, 500, 'User database not found.');
+        }
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        const user = users.find((u: any) => u.username === username);
+
+        if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+            return errorResponse(res, 401, 'Invalid username or password.');
+        }
+
+        const token = jwt.sign(
+            { id: user.id, username: user.username, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '8h' }
+        );
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 8 * 60 * 60 * 1000 // 8 hours
+        });
+
+        res.json({
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            permissions: user.permissions
+        });
+    } catch (err) {
+        errorResponse(res, 500, 'Failed to login.', (err as Error).message);
+    }
+});
+
+app.post('/api/auth/logout', (req: Request, res: Response) => {
+    res.clearCookie('token');
+    res.json({ message: 'Logged out successfully' });
+});
+
+app.get('/api/auth/me', authMiddleware, (req: AuthenticatedRequest, res: Response) => {
+    res.json(req.user);
+});
+
+// ================================================================
+//                          USER MANAGEMENT
+// ================================================================
+
+app.get('/api/users', authMiddleware, requireAdmin, (req: Request, res: Response) => {
+    try {
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        // Don't return password hashes
+        const usersSafe = users.map((u: any) => {
+            const { passwordHash, ...safe } = u;
+            return safe;
+        });
+        res.json(usersSafe);
+    } catch (err) {
+        errorResponse(res, 500, 'Failed to fetch users.', (err as Error).message);
+    }
+});
+
+app.post('/api/users', authMiddleware, requireAdmin, (req: Request, res: Response) => {
+    const { username, password, role, permissions } = req.body;
+
+    if (!username || !password || !role) {
+        return errorResponse(res, 400, 'Username, password, and role are required.');
+    }
+
+    try {
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+
+        if (users.find((u: any) => u.username === username)) {
+            return errorResponse(res, 400, 'Username already exists.');
+        }
+
+        const newUser = {
+            id: Date.now().toString(),
+            username,
+            passwordHash: bcrypt.hashSync(password, 10),
+            role,
+            permissions: permissions || []
+        };
+
+        users.push(newUser);
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+        const { passwordHash, ...safeUser } = newUser;
+        res.json(safeUser);
+    } catch (err) {
+        errorResponse(res, 500, 'Failed to create user.', (err as Error).message);
+    }
+});
+
+app.put('/api/users/:id', authMiddleware, requireAdmin, (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { role, permissions, password } = req.body;
+
+    try {
+        let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        const userIndex = users.findIndex((u: any) => u.id === id);
+
+        if (userIndex === -1) {
+            return errorResponse(res, 404, 'User not found.');
+        }
+
+        // Update fields if provided
+        if (role) users[userIndex].role = role;
+        if (permissions) users[userIndex].permissions = permissions;
+        if (password) users[userIndex].passwordHash = bcrypt.hashSync(password, 10);
+
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+        
+        const { passwordHash, ...safeUser } = users[userIndex];
+        res.json(safeUser);
+    } catch (err) {
+        errorResponse(res, 500, 'Failed to update user.', (err as Error).message);
+    }
+});
+
+app.delete('/api/users/:id', authMiddleware, requireAdmin, (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (id === '1') {
+        return errorResponse(res, 400, 'Cannot delete the primary admin user.');
+    }
+
+    try {
+        let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        const initialLength = users.length;
+        users = users.filter((u: any) => u.id !== id);
+
+        if (users.length === initialLength) {
+            return errorResponse(res, 404, 'User not found.');
+        }
+
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+        res.json({ message: 'User deleted successfully' });
+    } catch (err) {
+        errorResponse(res, 500, 'Failed to delete user.', (err as Error).message);
+    }
+});
+
+// ================================================================
 //                          ENDPOINTS 
 // ================================================================
 
@@ -279,7 +444,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Fetch Schema
-app.get("/api/service-schema", async (req, res) => {
+app.get("/api/service-schema", authMiddleware, async (req, res) => {
     const { environment, serviceType } = req.query;
 
     // Parameter validation
@@ -293,7 +458,7 @@ app.get("/api/service-schema", async (req, res) => {
 });
 
 // Retrieve
-app.post(['/api/retrieve-data', '/api/service-execute'], async (req: Request, res: Response) => {
+app.post(['/api/retrieve-data', '/api/service-execute'], authMiddleware, async (req: Request, res: Response) => {
     const { environment, serviceType, selectedColumnNames } = req.body;
 
     // Parameter validation
@@ -309,7 +474,7 @@ app.post(['/api/retrieve-data', '/api/service-execute'], async (req: Request, re
 });
 
 // Create
-app.post(['/api/create-data', '/api/create-intake-data'], async (req: Request, res: Response) => {
+app.post(['/api/create-data', '/api/create-intake-data'], authMiddleware, async (req: Request, res: Response) => {
     const { environment, serviceType } = req.body;
 
     // Parameter validation
@@ -324,7 +489,7 @@ app.post(['/api/create-data', '/api/create-intake-data'], async (req: Request, r
 });
 
 // Delete
-app.post(['/api/delete-data'], async (req: Request, res: Response) => {
+app.post(['/api/delete-data'], authMiddleware, async (req: Request, res: Response) => {
     const { environment, serviceType } = req.body;
 
     // Parameter validation
@@ -349,7 +514,7 @@ import { DOMParser } from "@xmldom/xmldom";
 const testResultsXML = "../test-results.xml";
 
 // Parses test-results.xml and returns as JSON
-app.get("/api/test-results", async (req: Request, res: Response) => {
+app.get("/api/test-results", authMiddleware, async (req: Request, res: Response) => {
     try {
         const xml = readFileSync(testResultsXML, "utf8");
         const doc = new DOMParser().parseFromString(xml, "text/xml");
@@ -405,7 +570,7 @@ app.get("/api/test-results", async (req: Request, res: Response) => {
 
 
 // run "npm test" and return output
-app.post("/api/run-tests", async (req: Request, res: Response) => {
+app.post("/api/run-tests", authMiddleware, async (req: Request, res: Response) => {
     // have to include resolve path (from server/src) to get to package.json (contains npm test command)
     exec("npm test", { cwd: path.resolve(__dirname, "../../") }, (err, stdout, stderr) => {
         const output = stdout + "\n" + stderr;
@@ -460,7 +625,7 @@ const API_PATHS: Record<string, string> = {
     edit: '/edit-path-placeholder',
 };
 
-app.post('/api/external-call', async (req: Request, res: Response) => {
+app.post('/api/external-call', authMiddleware, async (req: Request, res: Response) => {
     const { apiType, environment, requestBody } = req.body;
 
     if (!apiType || !environment) {
@@ -512,7 +677,7 @@ app.post('/api/external-call', async (req: Request, res: Response) => {
     }
 });
 
-app.get('/api/schema', async (req: Request, res: Response) => {
+app.get('/api/schema', authMiddleware, async (req: Request, res: Response) => {
     const { environment, tableName } = req.query;
 
     if (!environment || !tableName) return errorResponse(res, 400, 'environment and tableName query parameters are required.');

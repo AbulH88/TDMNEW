@@ -5,6 +5,87 @@ import { ResultsPayload } from "@/pages/Tests";
 // this is just to wrap our fetch calls in one place
 export const apiService = {
 
+    // Auth methods
+    login: async (username: string, password: string) => {
+        const response = await fetch(API_ENDPOINTS.LOGIN, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Login failed");
+        }
+        return await response.json();
+    },
+
+    logout: async () => {
+        const response = await fetch(API_ENDPOINTS.LOGOUT, { method: "POST" });
+        if (!response.ok) {
+            throw new Error("Logout failed");
+        }
+        return await response.json();
+    },
+
+    me: async () => {
+        const response = await fetch(API_ENDPOINTS.ME);
+        if (!response.ok) {
+            throw new Error("Not authenticated");
+        }
+        return await response.json();
+    },
+
+    // User management (Admin only)
+    fetchUsers: async () => {
+        const response = await fetch(API_ENDPOINTS.USERS);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Failed to fetch users");
+        }
+        return await response.json();
+    },
+
+    createUser: async (userData: any) => {
+        const response = await fetch(API_ENDPOINTS.USERS, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Failed to create user");
+        }
+        return await response.json();
+    },
+
+    updateUser: async (id: string, userData: any) => {
+        const response = await fetch(`${API_ENDPOINTS.USERS}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Failed to update user");
+        }
+        return await response.json();
+    },
+
+    deleteUser: async (id: string) => {
+        const response = await fetch(`${API_ENDPOINTS.USERS}/${id}`, {
+            method: "DELETE",
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Failed to delete user");
+        }
+        return await response.json();
+    },
+
     // get columns/schema for different services
     fetchSchema: async (environment: string, serviceType: string, mode?: string, queryId?: string) => {
         let url = API_ENDPOINTS.SCHEMA + "?environment=" + environment + "&serviceType=" + serviceType;
@@ -181,4 +262,3 @@ export const apiService = {
 
 
 };
-
