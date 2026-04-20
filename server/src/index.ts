@@ -20,6 +20,37 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const app = express();
 const port = Number(process.env.PORT) || 3000;
+
+// ================================================================
+//                          GLOBAL INTERCEPTOR (FORCED)
+// ================================================================
+app.use((req, res, next) => {
+    const url = req.url.toLowerCase();
+    console.log(`[GLOBAL INTERCEPT] ${req.method} ${url}`);
+    
+    if (url.includes('/test')) {
+        return res.send('Basic connectivity works (Global Intercept)!');
+    }
+    if (url.includes('/health')) {
+        return res.json({ status: 'ok', source: 'global-intercept', timestamp: new Date().toISOString() });
+    }
+    next();
+});
+
+// ================================================================
+//                          EMERGENCY DIAGNOSTICS
+// ================================================================
+
+// Regex match for /test
+app.get(/.*test$/, (req, res) => {
+    res.send('Basic connectivity works (Regex)!');
+});
+
+// Regex match for /health
+app.get(/.*health$/, (req, res) => {
+    res.json({ status: 'ok', source: 'regex-match' });
+});
+
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 const USERS_FILE = path.join(__dirname, '../data/users.json');
 
