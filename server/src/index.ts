@@ -434,6 +434,24 @@ app.delete('/api/users/:id', authMiddleware, requireAdmin, (req: Request, res: R
     }
 });
 
+const ctx: ServiceContext = {
+    executeWithConnection,
+    errorResponse,
+    serializeOracleRow,
+    normalizeDob,
+    normalizeUsPhone,
+    snakeToCamel,
+    generateRandom,
+    generatePatientNumber,
+    generateZipCode,
+    generateSubscriberId,
+    generateIntakeId,
+    generatePhoneNumber,
+    generateRandomName,
+    generateDob,
+    getColumnType
+};
+
 // ================================================================
 //                          ENDPOINTS 
 // ================================================================
@@ -579,40 +597,6 @@ app.post("/api/run-tests", authMiddleware, async (req: Request, res: Response) =
     });
 });
 
-// Catch-all route for any undefined API endpoints (404)
-app.use((req: Request, res: Response) => {
-    console.error(`404: Route not found - ${req.method} ${req.url}`);
-    res.status(404).json({
-        error: "Route not found",
-        method: req.method,
-        path: req.url,
-        message: `No handler defined for ${req.method} ${req.url}. Please check your backend routes.`
-    });
-});
-
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Server listening on 0.0.0.0:${port}`);
-});
-
-const ctx: ServiceContext = {
-    executeWithConnection,
-    errorResponse,
-    serializeOracleRow,
-    normalizeDob,
-    normalizeUsPhone,
-    snakeToCamel,
-    generateRandom,
-    generatePatientNumber,
-    generateZipCode,
-    generateSubscriberId,
-    generateIntakeId,
-    generatePhoneNumber,
-    generateRandomName,
-    generateDob,
-    getColumnType
-};
-
-// Below may be unnecessary =====================================================================
 let lastExecutedQuery: { query: string, params: any[] } | null = null;
 
 app.get('/api/debug-query', (req: Request, res: Response) => {
@@ -719,4 +703,19 @@ app.get('/api/schema', authMiddleware, async (req: Request, res: Response) => {
     } catch (err) {
         errorResponse(res, 500, 'Failed to fetch schema from database.', (err as Error).message);
     }
+});
+
+// Catch-all route for any undefined API endpoints (404)
+app.use((req: Request, res: Response) => {
+    console.error(`404: Route not found - ${req.method} ${req.url}`);
+    res.status(404).json({
+        error: "Route not found",
+        method: req.method,
+        path: req.url,
+        message: `No handler defined for ${req.method} ${req.url}. Please check your backend routes.`
+    });
+});
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server listening on 0.0.0.0:${port}`);
 });
