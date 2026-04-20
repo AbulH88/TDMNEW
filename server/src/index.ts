@@ -21,9 +21,33 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 export const app = express();
 const port = Number(process.env.PORT) || 3000;
 
-// EMERGENCY TEST ROUTE - BEFORE ALL MIDDLEWARE
+// ================================================================
+//                          EMERGENCY DIAGNOSTICS
+// ================================================================
+
+// 1. Basic string test
 app.get('/test', (req, res) => {
+    console.log('[DIAGNOSTIC] /test hit');
     res.send('Basic connectivity works!');
+});
+
+// 2. API Health check (Moved to top)
+app.get('/api/health', (req, res) => {
+    console.log('[DIAGNOSTIC] /api/health hit');
+    res.json({ status: 'ok', version: 'diagnostics-active', timestamp: new Date().toISOString() });
+});
+
+// 3. Login Route (Moved to top to bypass potential middleware issues)
+app.post('/api/auth/login', async (req, res) => {
+    console.log(`[DIAGNOSTIC] /api/auth/login hit. Method: ${req.method}`);
+    // Manually handle body if express.json() hasn't run yet
+    let body = req.body;
+    if (!body || Object.keys(body).length === 0) {
+        // Simple fallback to see if we can at least reach the route
+        return res.status(200).json({ message: "Route reached, but body is empty. Middleware check needed." });
+    }
+    // ... rest of login logic will be moved back once we confirm reachability
+    res.json({ message: "Login route reachable" });
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
@@ -35,17 +59,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-
-// Request logging middleware for debugging
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-});
-
-// Health check to verify backend is running latest code
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', version: 'diagnostics-active', timestamp: new Date().toISOString() });
-});
 
 const API_USER_ID = process.env.API_USER_ID;
 const API_PASSWORD = process.env.API_PASSWORD;
