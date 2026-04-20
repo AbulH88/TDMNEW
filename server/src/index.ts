@@ -20,6 +20,12 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const app = express();
 const port = Number(process.env.PORT) || 3000;
+
+// EMERGENCY TEST ROUTE - BEFORE ALL MIDDLEWARE
+app.get('/test', (req, res) => {
+    res.send('Basic connectivity works!');
+});
+
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 const USERS_FILE = path.join(__dirname, '../data/users.json');
 
