@@ -21,45 +21,54 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 export const app = express();
 const port = Number(process.env.PORT) || 3000;
 
-// ================================================================
-//                          GLOBAL INTERCEPTOR (FORCED)
-// ================================================================
-app.use((req, res, next) => {
-    const url = req.url.toLowerCase();
-    console.log(`[GLOBAL INTERCEPT] ${req.method} ${url}`);
-    
-    if (url.includes('/test')) {
-        return res.send('Basic connectivity works (Global Intercept)!');
-    }
-    if (url.includes('/health')) {
-        return res.json({ status: 'ok', source: 'global-intercept', timestamp: new Date().toISOString() });
-    }
-    next();
-});
-
-// ================================================================
-//                          EMERGENCY DIAGNOSTICS
-// ================================================================
-
-// Regex match for /test
-app.get(/.*test$/, (req, res) => {
-    res.send('Basic connectivity works (Regex)!');
-});
-
-// Regex match for /health
-app.get(/.*health$/, (req, res) => {
-    res.json({ status: 'ok', source: 'regex-match' });
-});
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
-const USERS_FILE = path.join(__dirname, '../data/users.json');
-
 app.use(cors({
     origin: true,
     credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const USERS_FILE = path.join(__dirname, '../data/users.json');
+
+// ================================================================
+//                          CRITICAL DIAGNOSTIC LOGIN
+// ================================================================
+app.post('/api/auth/login', async (req: Request, res: Response) => {
+    console.log(`[AUTH] Login attempt for: ${req.body?.username}`);
+    const { username, password } = req.body;
+    
+    if (!username || !password) return res.status(400).json({ error: 'Username and password are required.' });
+
+    try {
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        const user = users.find((u: any) => u.username === username);
+
+        if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+            console.log(`[AUTH] Failed login for: ${username}`);
+            return res.status(401).json({ error: 'Invalid username or password.' });
+        }
+
+        const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+        
+        res.cookie('token', token, { 
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 8 * 60 * 60 * 1000 // 8 hours
+        });
+        
+        console.log(`[AUTH] Success login for: ${username}`);
+        res.json({ id: user.id, username: user.username, role: user.role, permissions: user.permissions });
+    } catch (err) {
+        console.error(`[AUTH] Error:`, err);
+        res.status(500).json({ error: 'Auth error', details: (err as Error).message });
+    }
+});
+
+// ================================================================
+//                          GLOBAL INTERCEPTOR (FORCED)
+// ================================================================
 
 // Request logging middleware for debugging
 app.use((req, res, next) => {
@@ -122,6 +131,8 @@ const executeWithConnection = async <T>(
     callback: (connection: oracledb.Connection) => Promise<T>,
     environment: string
 ): Promise<T> => {
+    /* 
+    // REAL SQL CONNECTION (Commented out for security/local testing)
     let connection: oracledb.Connection | undefined;
     try {
         const connectionString = getOracleConnectionString(environment);
@@ -139,6 +150,34 @@ const executeWithConnection = async <T>(
                 console.error('Error closing database connection:', err);
             }
         }
+    }
+    */
+
+    // MOCK DB LOGIC (For local testing)
+    console.log(`[MOCK DB] executeWithConnection called for environment: ${environment}`);
+    
+    const mockConnection = {
+        execute: async (sql: string, params: any = [], options: any = {}) => {
+            console.log(`[MOCK SQL] Executing: ${sql}`);
+            console.log(`[MOCK PARAMS]`, params);
+            return { rows: [], rowsAffected: 1 };
+        },
+        close: async () => {
+            console.log('[MOCK DB] Connection "closed"');
+        },
+        commit: async () => {
+            console.log('[MOCK DB] Transaction "committed"');
+        },
+        rollback: async () => {
+            console.log('[MOCK DB] Transaction "rolled back"');
+        }
+    } as unknown as oracledb.Connection;
+
+    try {
+        return await callback(mockConnection);
+    } catch (err) {
+        console.error('[MOCK DB] Error in callback:', err);
+        throw err;
     }
 };
 
@@ -315,71 +354,6 @@ function formatDob(date: Date): string {
     const yyyy = String(date.getFullYear());
     return dd + "-" + mon + "-" + yyyy;
 }
-
-// ================================================================
-//                          AUTH ENDPOINTS
-// ================================================================
-
-app.post('/api/auth/login', async (req: Request, res: Response) => {
-    console.log(`[${new Date().toISOString()}] LOGIN ATTEMPT for user: ${req.body?.username}`);
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return errorResponse(res, 400, 'Username and password are required.');
-    }
-
-    try {
-        if (!fs.existsSync(USERS_FILE)) {
-            console.error("USERS_FILE not found at:", USERS_FILE);
-            return errorResponse(res, 500, 'User database not found.');
-        }
-        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        const user = users.find((u: any) => u.username === username);
-
-        if (!user) {
-            console.log("User not found:", username);
-            return errorResponse(res, 401, 'Invalid username or password.');
-        }
-
-        if (!bcrypt.compareSync(password, user.passwordHash)) {
-            console.log("Password mismatch for user:", username);
-            return errorResponse(res, 401, 'Invalid username or password.');
-        }
-
-        const token = jwt.sign(
-            { id: user.id, username: user.username, role: user.role },
-            JWT_SECRET,
-            { expiresIn: '8h' }
-        );
-
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 8 * 60 * 60 * 1000 // 8 hours
-        });
-
-        console.log("Login successful for user:", username);
-        res.json({
-            id: user.id,
-            username: user.username,
-            role: user.role,
-            permissions: user.permissions
-        });
-    } catch (err) {
-        console.error("Login error:", err);
-        errorResponse(res, 500, 'Failed to login.', (err as Error).message);
-    }
-});
-
-app.post('/api/auth/logout', (req: Request, res: Response) => {
-    res.clearCookie('token');
-    res.json({ message: 'Logged out successfully' });
-});
-
-app.get('/api/auth/me', authMiddleware, (req: AuthenticatedRequest, res: Response) => {
-    res.json(req.user);
-});
 
 // ================================================================
 //                          USER MANAGEMENT
@@ -782,7 +756,14 @@ app.get('/api/schema', authMiddleware, async (req: Request, res: Response) => {
 
 // Catch-all route for any undefined API endpoints (404)
 app.use((req: Request, res: Response) => {
-    console.error(`404: Route not found - ${req.method} ${req.url}`);
+    console.error(`404: Route not found - ${req.method} "${req.url}" (Original: "${req.originalUrl}")`);
+    
+    // Debug log to see all registered routes
+    const routes = app._router.stack
+        .filter((r: any) => r.route)
+        .map((r: any) => `${Object.keys(r.route.methods).join(',').toUpperCase()} ${r.route.path}`);
+    console.debug('Registered routes:', routes);
+
     res.status(404).json({
         error: "Route not found",
         method: req.method,

@@ -2,7 +2,7 @@
   {
     "id": "1",
     "username": "admin",
-    "passwordHash": "$2b$10$3swTUng1u8ZEJ6aZqmRZDO1LiHEL/l8ckuJkPKt6baujbNfJIp6by",
+    "passwordHash": "$2b$10$9ZVVxxcfEF10O1DDsEsPluXCtPimEB3jkwBswHWMOBQPhz1wy.UyW",
     "role": "admin",
     "permissions": ["read:generator", "write:generator", "read:services", "write:services", "read:tests", "admin"]
   }
