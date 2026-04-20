@@ -476,7 +476,22 @@ app.get("/api/service-schema", authMiddleware, async (req, res) => {
 });
 
 // Retrieve
-app.post(['/api/retrieve-data', '/api/service-execute'], authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/retrieve-data', authMiddleware, async (req: Request, res: Response) => {
+    const { environment, serviceType, selectedColumnNames } = req.body;
+
+    // Parameter validation
+    if (!environment || !serviceType || !Array.isArray(selectedColumnNames) || selectedColumnNames.length === 0)    return errorResponse(res, 400, "missing required params.");
+    if (!validateEnvironment(res, environment)) return;
+    if (!validateServiceType(res, serviceType)) return;
+
+    // Call to service
+    const svc = getService(serviceType);
+    if (!svc.capabilities.retrieve || !svc.retrieve) return errorResponse(res, 400, "Service does not support retrieve.");
+    return svc.retrieve(req, res, ctx);
+
+});
+
+app.post('/api/service-execute', authMiddleware, async (req: Request, res: Response) => {
     const { environment, serviceType, selectedColumnNames } = req.body;
 
     // Parameter validation
@@ -492,7 +507,21 @@ app.post(['/api/retrieve-data', '/api/service-execute'], authMiddleware, async (
 });
 
 // Create
-app.post(['/api/create-data', '/api/create-intake-data'], authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/create-data', authMiddleware, async (req: Request, res: Response) => {
+    const { environment, serviceType } = req.body;
+
+    // Parameter validation
+    if (!environment || !serviceType) return errorResponse(res, 400, "environment and serviceType are required.");
+    if (!validateEnvironment(res, environment)) return;
+    if (!validateServiceType(res, serviceType)) return;
+
+    // Call to service
+    const svc = getService(serviceType);
+    if (!svc.capabilities.create || !svc.create) return errorResponse(res, 400, "Service does not support create.");
+    return svc.create(req, res, ctx);
+});
+
+app.post('/api/create-intake-data', authMiddleware, async (req: Request, res: Response) => {
     const { environment, serviceType } = req.body;
 
     // Parameter validation
@@ -507,7 +536,7 @@ app.post(['/api/create-data', '/api/create-intake-data'], authMiddleware, async 
 });
 
 // Delete
-app.post(['/api/delete-data'], authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/delete-data', authMiddleware, async (req: Request, res: Response) => {
     const { environment, serviceType } = req.body;
 
     // Parameter validation
