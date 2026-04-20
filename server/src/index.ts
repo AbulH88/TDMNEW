@@ -36,6 +36,11 @@ app.use((req, res, next) => {
     next();
 });
 
+// Health check to verify backend is running latest code
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', version: 'diagnostics-active', timestamp: new Date().toISOString() });
+});
+
 const API_USER_ID = process.env.API_USER_ID;
 const API_PASSWORD = process.env.API_PASSWORD;
 const EXTERNAL_API_DOMAIN_CORE = process.env.EXTERNAL_API_DOMAIN_CORE || 'localhost:8081';
