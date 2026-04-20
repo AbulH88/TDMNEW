@@ -131,8 +131,6 @@ const executeWithConnection = async <T>(
     callback: (connection: oracledb.Connection) => Promise<T>,
     environment: string
 ): Promise<T> => {
-    /* 
-    // REAL SQL CONNECTION (Commented out for security/local testing)
     let connection: oracledb.Connection | undefined;
     try {
         const connectionString = getOracleConnectionString(environment);
@@ -150,34 +148,6 @@ const executeWithConnection = async <T>(
                 console.error('Error closing database connection:', err);
             }
         }
-    }
-    */
-
-    // MOCK DB LOGIC (For local testing)
-    console.log(`[MOCK DB] executeWithConnection called for environment: ${environment}`);
-    
-    const mockConnection = {
-        execute: async (sql: string, params: any = [], options: any = {}) => {
-            console.log(`[MOCK SQL] Executing: ${sql}`);
-            console.log(`[MOCK PARAMS]`, params);
-            return { rows: [], rowsAffected: 1 };
-        },
-        close: async () => {
-            console.log('[MOCK DB] Connection "closed"');
-        },
-        commit: async () => {
-            console.log('[MOCK DB] Transaction "committed"');
-        },
-        rollback: async () => {
-            console.log('[MOCK DB] Transaction "rolled back"');
-        }
-    } as unknown as oracledb.Connection;
-
-    try {
-        return await callback(mockConnection);
-    } catch (err) {
-        console.error('[MOCK DB] Error in callback:', err);
-        throw err;
     }
 };
 
