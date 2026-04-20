@@ -290,6 +290,7 @@ function formatDob(date: Date): string {
 // ================================================================
 
 app.post('/api/auth/login', async (req: Request, res: Response) => {
+    console.log(`[${new Date().toISOString()}] LOGIN ATTEMPT for user: ${req.body?.username}`);
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -298,12 +299,19 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 
     try {
         if (!fs.existsSync(USERS_FILE)) {
+            console.error("USERS_FILE not found at:", USERS_FILE);
             return errorResponse(res, 500, 'User database not found.');
         }
         const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
         const user = users.find((u: any) => u.username === username);
 
-        if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+        if (!user) {
+            console.log("User not found:", username);
+            return errorResponse(res, 401, 'Invalid username or password.');
+        }
+
+        if (!bcrypt.compareSync(password, user.passwordHash)) {
+            console.log("Password mismatch for user:", username);
             return errorResponse(res, 401, 'Invalid username or password.');
         }
 
@@ -320,6 +328,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
             maxAge: 8 * 60 * 60 * 1000 // 8 hours
         });
 
+        console.log("Login successful for user:", username);
         res.json({
             id: user.id,
             username: user.username,
@@ -327,6 +336,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
             permissions: user.permissions
         });
     } catch (err) {
+        console.error("Login error:", err);
         errorResponse(res, 500, 'Failed to login.', (err as Error).message);
     }
 });
