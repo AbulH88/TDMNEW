@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Trash2, 
   UserPlus, 
+  Plus,
   Shield, 
   Search, 
   Users, 
@@ -199,11 +200,11 @@ const Admin = () => {
         );
     };
 
-    const filteredUsers = users.filter(user => {
+    const filteredUsers = Array.isArray(users) ? users.filter(user => {
         const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter === 'all' || user.role === roleFilter;
         return matchesSearch && matchesRole;
-    });
+    }) : [];
 
     return (
         <div className="min-h-screen bg-[#f3f0ff] relative overflow-hidden font-sans selection:bg-purple-200">
@@ -324,8 +325,8 @@ const Admin = () => {
                 {/* Stats Overview */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                     {[
-                        { label: 'Total Users', value: users.length, icon: Users, color: 'text-slate-400' },
-                        { label: 'Admins', value: users.filter(u => u.role === 'admin').length, icon: ShieldCheck, color: 'text-slate-400' },
+                        { label: 'Total Users', value: Array.isArray(users) ? users.length : 0, icon: Users, color: 'text-slate-400' },
+                        { label: 'Admins', value: Array.isArray(users) ? users.filter(u => u.role === 'admin').length : 0, icon: ShieldCheck, color: 'text-slate-400' },
                         { label: 'Active Status', value: 'Online', badge: true, color: 'text-teal-500 bg-teal-50 border-teal-100' },
                         { label: 'Module Health', value: 'Healthy', badge: true, color: 'text-teal-500 bg-teal-50 border-teal-100' }
                     ].map((stat, i) => (
@@ -459,7 +460,7 @@ const Admin = () => {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row items-center justify-between mt-10 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                            <div>Showing {filteredUsers.length} of {users.length} system identities</div>
+                            <div>Showing {filteredUsers.length} of {Array.isArray(users) ? users.length : 0} system identities</div>
                             <div className="flex items-center gap-2 mt-2 sm:mt-0">
                                 <Activity className="h-3 w-3" />
                                 Database secure and synchronized
@@ -467,7 +468,102 @@ const Admin = () => {
                         </div>
                     </CardContent>
                 </Card>
-                
+
+                {/* Edit User Dialog */}
+                <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+                    <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-white/40 bg-white/90 backdrop-blur-xl shadow-2xl">
+                        <form onSubmit={handleUpdateUser}>
+                            <DialogHeader>
+                                <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                                    <UserCog className="h-6 w-6 text-indigo-600" />
+                                    Edit User Access
+                                </DialogTitle>
+                                <DialogDescription className="font-medium">
+                                    Modify system role and module permissions for <span className="font-bold text-slate-900">{editingUser?.username}</span>.
+                                </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="grid gap-6 py-6">
+                                <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl flex items-start gap-3">
+                                    <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-900">Security Warning</p>
+                                        <p className="text-xs text-amber-700 font-medium leading-relaxed">Changes to roles or permissions take effect on the user's next login or session refresh.</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-role" className="font-bold ml-1">System Role</Label>
+                                    <Select value={editRole} onValueChange={setEditRole}>
+                                        <SelectTrigger id="edit-role" className="h-11 rounded-xl bg-white/50 border-slate-200">
+                                            <SelectValue placeholder="Select role" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            <SelectItem value="qa">QA</SelectItem>
+                                            <SelectItem value="developer">Developer</SelectItem>
+                                            <SelectItem value="admin">Administrator</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-password" title="8-12 characters" className="font-bold ml-1">Reset Password (Optional)</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="edit-password"
+                                            type={showPassword ? "text" : "password"}
+                                            value={editPassword}
+                                            onChange={(e) => setEditPassword(e.target.value)}
+                                            placeholder="Enter new password..."
+                                            className="h-11 rounded-xl bg-white/50 border-slate-200 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                                        >
+                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <Label className="text-base font-bold ml-1">Module Permissions</Label>
+                                    <div className="grid grid-cols-1 gap-2 border border-slate-100 rounded-2xl p-4 bg-slate-50/50">
+                                        {AVAILABLE_PERMISSIONS.map(perm => (
+                                            <div key={perm.id} className="flex items-center space-x-3 p-1 hover:bg-white/40 rounded-lg transition-colors">
+                                                <Checkbox
+                                                    id={`edit-perm-${perm.id}`}
+                                                    checked={editPermissions.includes(perm.id)}
+                                                    onCheckedChange={() => toggleEditPermission(perm.id)}
+                                                    className="rounded-md border-slate-300 data-[state=checked]:bg-purple-600"
+                                                />
+                                                <div className="grid leading-none">
+                                                    <label
+                                                        htmlFor={`edit-perm-${perm.id}`}
+                                                        className="text-sm font-bold text-slate-700 cursor-pointer"
+                                                    >
+                                                        {perm.label}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <DialogFooter className="gap-3">
+                                <Button variant="ghost" type="button" onClick={() => setIsEditUserOpen(false)} className="h-12 rounded-xl font-bold">
+                                    Cancel
+                                </Button>
+                                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl px-8 font-bold shadow-md shadow-indigo-100">
+                                    Update Permissions
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
                 {/* Visual Accent - Large Arrow Down */}
                 <div className="flex justify-center mt-12 opacity-40">
                     <div className="p-3 bg-white rounded-full shadow-lg border border-white/60">
