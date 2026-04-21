@@ -206,439 +206,274 @@ const Admin = () => {
     });
 
     return (
-        <div className="min-h-screen bg-[#f8fafc]">
+        <div className="min-h-screen bg-[#f3f0ff] relative overflow-hidden font-sans selection:bg-purple-200">
+            {/* Soft Nebula Background Blobs */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-200/40 rounded-full blur-[120px] pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-100/30 rounded-full blur-[120px] pointer-events-none"></div>
+            
             <Header />
             
-            {/* Page Header Area */}
-            <div className="bg-white border-b border-slate-200">
-                <div className="container mx-auto py-8 px-4 max-w-6xl">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 rounded-xl">
-                                <Shield className="h-8 w-8 text-blue-600" />
-                            </div>
-                            <div>
-                                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Console</h1>
-                                <p className="text-slate-500 font-medium">Manage system users, roles, and access permissions</p>
-                            </div>
+            <main className="container mx-auto py-10 px-6 max-w-5xl relative z-10">
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                    <div className="flex items-center gap-5">
+                        <div className="p-3 bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/40">
+                            <Shield className="h-7 w-7 text-purple-600" />
                         </div>
-                        
-                        <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200 gap-2 px-6 h-11">
-                                    <UserPlus className="h-5 w-5" />
-                                    <span>Create New User</span>
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[500px]">
-                                <form onSubmit={handleAddUser}>
-                                    <DialogHeader>
-                                        <DialogTitle className="text-2xl">Add System User</DialogTitle>
-                                        <DialogDescription>
-                                            Create a new account and assign specific module permissions.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    
-                                    <div className="grid gap-6 py-6">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="username">Username</Label>
-                                                <Input
-                                                    id="username"
-                                                    value={newUsername}
-                                                    onChange={(e) => setNewUsername(e.target.value)}
-                                                    placeholder="e.g. jdoe"
-                                                    className="h-10"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="role">System Role</Label>
-                                                <Select value={newRole} onValueChange={setNewRole}>
-                                                    <SelectTrigger className="h-10">
-                                                        <SelectValue placeholder="Select role" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="qa">QA</SelectItem>
-                                                        <SelectItem value="developer">Developer</SelectItem>
-                                                        <SelectItem value="admin">Administrator</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                        
+                        <div>
+                            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Admin Console</h1>
+                            <p className="text-slate-500 font-medium mt-1">Manage system users, roles, and access permissions</p>
+                        </div>
+                    </div>
+                    
+                    <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-purple-200/50 rounded-2xl h-12 px-8 font-bold transition-all hover:scale-[1.02] active:scale-[0.98] border-none outline-none">
+                                <Plus className="h-5 w-5 mr-2" />
+                                Create New User
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-white/40 bg-white/90 backdrop-blur-xl shadow-2xl">
+                            <form onSubmit={handleAddUser}>
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-black">Add System User</DialogTitle>
+                                    <DialogDescription className="font-medium">
+                                        Create a new account and assign specific module permissions.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                
+                                <div className="grid gap-6 py-6">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="password">Access Password</Label>
+                                            <Label htmlFor="username" className="font-bold ml-1">Username</Label>
                                             <Input
-                                                id="password"
-                                                type="password"
-                                                value={newPassword}
-                                                onChange={(e) => setNewPassword(e.target.value)}
-                                                placeholder="••••••••"
-                                                className="h-10"
+                                                id="username"
+                                                value={newUsername}
+                                                onChange={(e) => setNewUsername(e.target.value)}
+                                                placeholder="e.g. jdoe"
+                                                className="h-11 rounded-xl bg-white/50 border-slate-200 focus:ring-2 focus:ring-purple-500/20 transition-all"
                                                 required
                                             />
                                         </div>
-
-                                        <div className="space-y-3">
-                                            <Label className="text-base font-semibold">Module Permissions</Label>
-                                            <div className="grid grid-cols-1 gap-3 border rounded-xl p-4 bg-slate-50">
-                                                {AVAILABLE_PERMISSIONS.map(perm => (
-                                                    <div key={perm.id} className="flex items-start space-x-3">
-                                                        <Checkbox
-                                                            id={`perm-${perm.id}`}
-                                                            className="mt-1"
-                                                            checked={selectedPermissions.includes(perm.id)}
-                                                            onCheckedChange={() => togglePermission(perm.id)}
-                                                        />
-                                                        <div className="grid gap-1.5 leading-none">
-                                                            <label
-                                                                htmlFor={`perm-${perm.id}`}
-                                                                className="text-sm font-bold text-slate-900 cursor-pointer"
-                                                            >
-                                                                {perm.label}
-                                                            </label>
-                                                            <p className="text-xs text-slate-500">
-                                                                {perm.description}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="role" className="font-bold ml-1">System Role</Label>
+                                            <Select value={newRole} onValueChange={setNewRole}>
+                                                <SelectTrigger className="h-11 rounded-xl bg-white/50 border-slate-200">
+                                                    <SelectValue placeholder="Select role" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="qa">QA</SelectItem>
+                                                    <SelectItem value="developer">Developer</SelectItem>
+                                                    <SelectItem value="admin">Administrator</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                     
-                                    <DialogFooter className="gap-3">
-                                        <Button variant="outline" type="button" onClick={resetForm} className="h-11 px-6">
-                                            Cancel
-                                        </Button>
-                                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 h-11 px-8">
-                                            Save User Account
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                </div>
-            </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password" title="8-12 characters" className="font-bold ml-1">Access Password</Label>
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className="h-11 rounded-xl bg-white/50 border-slate-200 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                            required
+                                        />
+                                    </div>
 
-            <main className="container mx-auto py-10 px-4 max-w-6xl">
-                
-                {/* Stats Overview */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                    <Card className="border-none shadow-sm shadow-slate-200">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Users</p>
-                                    <h3 className="text-3xl font-black mt-1 text-slate-900">{users.length}</h3>
-                                </div>
-                                <div className="p-3 bg-blue-50 rounded-lg">
-                                    <Users className="h-6 w-6 text-blue-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-none shadow-sm shadow-slate-200">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Admins</p>
-                                    <h3 className="text-3xl font-black mt-1 text-slate-900">
-                                        {users.filter(u => u.role === 'admin').length}
-                                    </h3>
-                                </div>
-                                <div className="p-3 bg-purple-50 rounded-lg">
-                                    <ShieldCheck className="h-6 w-6 text-purple-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-none shadow-sm shadow-slate-200">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Active Status</p>
-                                    <h3 className="text-3xl font-black mt-1 text-slate-900">Online</h3>
-                                </div>
-                                <div className="p-3 bg-green-50 rounded-lg">
-                                    <Activity className="h-6 w-6 text-green-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-none shadow-sm shadow-slate-200">
-                        <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Module Health</p>
-                                    <div className="flex items-center gap-1.5 mt-2">
-                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                        <span className="text-sm font-bold text-slate-700">Healthy</span>
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-bold ml-1">Module Permissions</Label>
+                                        <div className="grid grid-cols-1 gap-2 border border-slate-100 rounded-2xl p-4 bg-slate-50/50">
+                                            {AVAILABLE_PERMISSIONS.map(perm => (
+                                                <div key={perm.id} className="flex items-center space-x-3 p-1 hover:bg-white/40 rounded-lg transition-colors">
+                                                    <Checkbox
+                                                        id={`perm-${perm.id}`}
+                                                        checked={selectedPermissions.includes(perm.id)}
+                                                        onCheckedChange={() => togglePermission(perm.id)}
+                                                        className="rounded-md border-slate-300 data-[state=checked]:bg-purple-600"
+                                                    />
+                                                    <div className="grid leading-none">
+                                                        <label
+                                                            htmlFor={`perm-${perm.id}`}
+                                                            className="text-sm font-bold text-slate-700 cursor-pointer"
+                                                        >
+                                                            {perm.label}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="p-3 bg-amber-50 rounded-lg">
-                                    <Activity className="h-6 w-6 text-amber-600" />
+                                
+                                <DialogFooter className="gap-3">
+                                    <Button variant="ghost" type="button" onClick={resetForm} className="h-12 rounded-xl font-bold">
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" className="bg-purple-600 hover:bg-purple-700 h-12 rounded-xl px-8 font-bold shadow-md shadow-purple-100">
+                                        Save User Account
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+                
+                {/* Stats Overview */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                    {[
+                        { label: 'Total Users', value: users.length, icon: Users, color: 'text-slate-400' },
+                        { label: 'Admins', value: users.filter(u => u.role === 'admin').length, icon: ShieldCheck, color: 'text-slate-400' },
+                        { label: 'Active Status', value: 'Online', badge: true, color: 'text-teal-500 bg-teal-50 border-teal-100' },
+                        { label: 'Module Health', value: 'Healthy', badge: true, color: 'text-teal-500 bg-teal-50 border-teal-100' }
+                    ].map((stat, i) => (
+                        <Card key={i} className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/70 backdrop-blur-md rounded-[1.5rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300">
+                            <CardContent className="p-6">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">{stat.label}</p>
+                                <div className="flex items-end justify-between">
+                                    {stat.badge ? (
+                                        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border ${stat.color} font-bold text-sm`}>
+                                            <div className="w-2 h-2 rounded-full bg-current animate-pulse"></div>
+                                            {stat.value}
+                                        </div>
+                                    ) : (
+                                        <h3 className="text-4xl font-black text-slate-800">{stat.value}</h3>
+                                    )}
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
 
                 {/* User List & Management */}
-                <Card className="border-none shadow-sm shadow-slate-200 overflow-hidden">
-                    <CardHeader className="bg-white border-b border-slate-100 py-6 px-8">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div>
-                                <CardTitle className="text-xl font-bold text-slate-900">System Identity Store</CardTitle>
-                                <CardDescription className="text-slate-500 mt-1">Directory of all accounts authorized to access the TDM system.</CardDescription>
+                <Card className="border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] bg-white/60 backdrop-blur-xl rounded-[2.5rem] overflow-hidden border border-white/20">
+                    <CardHeader className="py-10 px-10">
+                        <div className="space-y-1 mb-8">
+                            <CardTitle className="text-2xl font-black text-slate-900">System Identity Store</CardTitle>
+                            <CardDescription className="text-slate-500 font-medium">Directory of all accounts authorized to access the TDM system</CardDescription>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            <div className="relative w-full">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <Input
+                                    placeholder="Search by username..."
+                                    className="pl-11 h-12 w-full bg-white/50 border-none rounded-2xl shadow-inner focus:ring-2 focus:ring-purple-500/10 transition-all placeholder:text-slate-400"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
                             
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                                <div className="relative group">
-                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                                    <Input
-                                        placeholder="Search by username..."
-                                        className="pl-10 h-10 w-full sm:w-64 bg-slate-50 border-slate-200 focus:bg-white transition-all"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-                                
-                                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                    <SelectTrigger className="w-full sm:w-40 h-10 bg-slate-50 border-slate-200">
-                                        <div className="flex items-center gap-2">
-                                            <Filter className="h-4 w-4 text-slate-400" />
-                                            <SelectValue placeholder="All Roles" />
-                                        </div>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Roles</SelectItem>
-                                        <SelectItem value="admin">Administrators</SelectItem>
-                                        <SelectItem value="qa">QA</SelectItem>
-                                        <SelectItem value="developer">Developer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <Select value={roleFilter} onValueChange={setRoleFilter}>
+                                <SelectTrigger className="w-full sm:w-48 h-12 bg-white/50 border-none rounded-2xl shadow-inner font-bold text-slate-600">
+                                    <SelectValue placeholder="All Roles" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-white/40 shadow-2xl">
+                                    <SelectItem value="all">All Roles</SelectItem>
+                                    <SelectItem value="admin">Administrators</SelectItem>
+                                    <SelectItem value="qa">QA</SelectItem>
+                                    <SelectItem value="developer">Developer</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0">
+                    
+                    <CardContent className="px-10 pb-10">
                         <div className="overflow-x-auto">
                             <Table>
-                                <TableHeader className="bg-slate-50/50">
-                                    <TableRow className="border-none hover:bg-transparent">
-                                        <TableHead className="py-4 pl-8 text-slate-500 font-bold uppercase text-[11px] tracking-widest">User Profile</TableHead>
-                                        <TableHead className="py-4 text-slate-500 font-bold uppercase text-[11px] tracking-widest text-center">Security Role</TableHead>
-                                        <TableHead className="py-4 text-slate-500 font-bold uppercase text-[11px] tracking-widest">Active Permissions</TableHead>
-                                        <TableHead className="py-4 pr-8 text-right text-slate-500 font-bold uppercase text-[11px] tracking-widest">Management</TableHead>
+                                <TableHeader>
+                                    <TableRow className="border-none hover:bg-transparent uppercase tracking-[0.15em] text-[10px] font-black text-slate-400">
+                                        <TableHead className="py-4 pl-0">User Profile</TableHead>
+                                        <TableHead className="py-4">Security Role</TableHead>
+                                        <TableHead className="py-4">Active Permissions</TableHead>
+                                        <TableHead className="py-4 text-right">Manage</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="text-center py-20">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                                                    <span className="text-slate-500 font-medium tracking-tight">Syncing user directory...</span>
-                                                </div>
+                                        <TableRow className="border-none">
+                                            <TableCell colSpan={4} className="text-center py-24">
+                                                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
                                             </TableCell>
                                         </TableRow>
-                                    ) : filteredUsers.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="text-center py-20">
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <XCircle className="h-10 w-10 text-slate-300" />
-                                                    <span className="text-slate-500 font-semibold">No users match your criteria</span>
-                                                    <Button variant="link" onClick={() => {setSearchTerm(''); setRoleFilter('all')}}>Clear all filters</Button>
+                                    ) : filteredUsers.map((user) => (
+                                        <TableRow key={user.id} className="border-t border-slate-50/50 hover:bg-white/40 transition-colors group">
+                                            <TableCell className="py-6 pl-0">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-12 w-12 rounded-full bg-gradient-to-tr from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-600 font-black text-sm border-2 border-white shadow-sm">
+                                                        {user.username.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-black text-slate-800 text-lg">{user.username}</div>
+                                                        <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">System ID: {user.id}</div>
+                                                    </div>
                                                 </div>
-                                            </TableCell>  
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge className="bg-white/80 text-slate-600 border-slate-100 px-3 py-1 rounded-lg font-bold shadow-sm">
+                                                    {user.role}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {user.permissions.slice(0, 2).map(p => (
+                                                        <Badge key={p} className="bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100 px-3 py-1 rounded-lg font-bold">
+                                                            {p.split(':')[1] || p}
+                                                        </Badge>
+                                                    ))}
+                                                    {user.permissions.length > 2 && (
+                                                        <span className="text-xs font-bold text-slate-400 pt-1">+{user.permissions.length - 2} more</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-white/80 shadow-sm border border-transparent hover:border-white">
+                                                            <MoreVertical className="h-5 w-5 text-slate-400" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="rounded-2xl border-white/40 p-2 shadow-2xl w-48 bg-white/95 backdrop-blur-xl">
+                                                        <DropdownMenuItem onClick={() => handleEditClick(user)} className="rounded-xl font-bold cursor-pointer focus:bg-purple-50 focus:text-purple-600">
+                                                            <UserCog className="h-4 w-4 mr-2" />
+                                                            Edit User
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem 
+                                                            onClick={() => handleDeleteUser(user.id)}
+                                                            className="rounded-xl font-bold text-red-600 cursor-pointer focus:bg-red-50"
+                                                            disabled={user.id === '1'}
+                                                        >
+                                                            <Trash2 className="h-4 w-4 mr-2" />
+                                                            Delete Account
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
                                         </TableRow>
-                                    ) : (
-                                        filteredUsers.map((user) => (
-                                            <TableRow key={user.id} className="hover:bg-slate-50/50 group transition-colors border-slate-100">
-                                                <TableCell className="py-5 pl-8">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm border border-slate-200">
-                                                            {user.username.substring(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-slate-900 text-base">{user.username}</span>
-                                                            <span className="text-xs text-slate-400 font-medium">System ID: {user.id}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge 
-                                                        className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                                            user.role === 'admin' 
-                                                            ? 'bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100 shadow-sm shadow-purple-50' 
-                                                            : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                                                        }`}
-                                                        variant="outline"
-                                                    >       
-                                                        {user.role}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-wrap gap-1.5 max-w-md">
-                                                        {user.permissions.length === 0 ? (
-                                                            <span className="text-xs italic text-slate-400">None assigned</span>
-                                                        ) : (
-                                                            user.permissions.map(p => (
-                                                                <Badge key={p} variant="secondary" className="bg-white border-slate-200 text-slate-500 text-[10px] font-bold py-0 h-6 px-2 hover:bg-slate-50">  
-                                                                    {p.split(':')[1] || p}
-                                                                </Badge>
-                                                            ))
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right pr-8">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-900">
-                                                                <MoreVertical className="h-5 w-5" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-48 p-2">
-                                                            <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2 py-1.5">Manage Access</DropdownMenuLabel>
-                                                            <DropdownMenuItem 
-                                                                className="cursor-pointer gap-2 focus:bg-slate-50"
-                                                                onClick={() => handleEditClick(user)}
-                                                            >
-                                                                <UserCog className="h-4 w-4" />
-                                                                <span>Edit Role & Access</span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem className="cursor-pointer gap-2 focus:bg-slate-50">
-                                                                <Activity className="h-4 w-4" />
-                                                                <span>View Usage Log</span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem 
-                                                                className={`cursor-pointer gap-2 ${user.id === '1' ? 'opacity-50 pointer-events-none' : 'text-red-600 focus:bg-red-50 focus:text-red-700'}`}
-                                                                onClick={() => {
-                                                                    if (confirm(`Revoke all access for "${user.username}"? This action cannot be undone.`)) {
-                                                                        handleDeleteUser(user.id);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                                <span>Delete Account</span>
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
+                                    ))}
                                 </TableBody>
                             </Table>
                         </div>
-                        <div className="py-6 px-8 bg-slate-50/30 border-t border-slate-100">
-                            <p className="text-xs text-slate-400 font-medium">
-                                Showing {filteredUsers.length} of {users.length} system identities • Database secure and synchronized
-                            </p>
+                        
+                        <div className="flex flex-col sm:flex-row items-center justify-between mt-10 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            <div>Showing {filteredUsers.length} of {users.length} system identities</div>
+                            <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                                <Activity className="h-3 w-3" />
+                                Database secure and synchronized
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
-
-                {/* Edit User Dialog */}
-                <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
-                    <DialogContent className="sm:max-w-[500px]">
-                        <form onSubmit={handleUpdateUser}>
-                            <DialogHeader>
-                                <DialogTitle className="text-2xl flex items-center gap-2">
-                                    <UserCog className="h-6 w-6 text-blue-600" />
-                                    Edit User Access
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Modify system role and module permissions for <span className="font-bold text-slate-900">{editingUser?.username}</span>.
-                                </DialogDescription>
-                            </DialogHeader>
-                            
-                            <div className="grid gap-6 py-6">
-                                <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3">
-                                    <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-bold text-amber-900">Security Warning</p>
-                                        <p className="text-xs text-amber-700">Changes to roles or permissions take effect on the user's next login or session refresh.</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-role">System Role</Label>
-                                    <Select value={editRole} onValueChange={setEditRole}>
-                                        <SelectTrigger id="edit-role" className="h-10">
-                                            <SelectValue placeholder="Select role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="qa">QA</SelectItem>
-                                            <SelectItem value="developer">Developer</SelectItem>
-                                            <SelectItem value="admin">Administrator</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-password">Reset Password (Leave blank to keep current)</Label>
-                                    <div className="relative">
-                                        <Input
-                                            id="edit-password"
-                                            type={showPassword ? "text" : "password"}
-                                            value={editPassword}
-                                            onChange={(e) => setEditPassword(e.target.value)}
-                                            placeholder="Enter new password..."
-                                            className="h-10 pr-10"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-                                        >
-                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <Label className="text-base font-semibold">Module Permissions</Label>
-                                    <div className="grid grid-cols-1 gap-3 border rounded-xl p-4 bg-slate-50">
-                                        {AVAILABLE_PERMISSIONS.map(perm => (
-                                            <div key={perm.id} className="flex items-start space-x-3">
-                                                <Checkbox
-                                                    id={`edit-perm-${perm.id}`}
-                                                    className="mt-1"
-                                                    checked={editPermissions.includes(perm.id)}
-                                                    onCheckedChange={() => toggleEditPermission(perm.id)}
-                                                />
-                                                <div className="grid gap-1.5 leading-none">
-                                                    <label
-                                                        htmlFor={`edit-perm-${perm.id}`}
-                                                        className="text-sm font-bold text-slate-900 cursor-pointer"
-                                                    >
-                                                        {perm.label}
-                                                    </label>
-                                                    <p className="text-xs text-slate-500">
-                                                        {perm.description}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <DialogFooter className="gap-3">
-                                <Button variant="outline" type="button" onClick={() => setIsEditUserOpen(false)} className="h-11 px-6">
-                                    Cancel
-                                </Button>
-                                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 h-11 px-8">
-                                    Update Permissions
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                
+                {/* Visual Accent - Large Arrow Down */}
+                <div className="flex justify-center mt-12 opacity-40">
+                    <div className="p-3 bg-white rounded-full shadow-lg border border-white/60">
+                        <Activity className="h-6 w-6 text-slate-400 rotate-180" />
+                    </div>
+                </div>
             </main>
         </div>
     );
