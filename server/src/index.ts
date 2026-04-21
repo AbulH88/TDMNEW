@@ -96,6 +96,32 @@ app.post('/api/auth/change-password', authMiddleware, async (req: Request, res: 
     }
 });
 
+app.get('/api/auth/me', authMiddleware, (req: Request, res: Response) => {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: 'Not authenticated' });
+    
+    // Fetch latest user data to include permissions
+    try {
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        const dbUser = users.find((u: any) => u.id === user.id);
+        if (!dbUser) return res.status(401).json({ error: 'User no longer exists' });
+
+        res.json({ 
+            id: dbUser.id, 
+            username: dbUser.username, 
+            role: dbUser.role, 
+            permissions: dbUser.permissions 
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/auth/logout', (req: Request, res: Response) => {
+    res.clearCookie('token');
+    res.json({ message: 'Logged out successfully' });
+});
+
 // ================================================================
 //                          GLOBAL INTERCEPTOR (FORCED)
 // ================================================================
@@ -764,10 +790,13 @@ app.use((req: Request, res: Response) => {
     console.error(`404: Route not found - ${req.method} "${req.url}" (Original: "${req.originalUrl}")`);
     
     // Debug log to see all registered routes
-    const routes = app._router.stack
-        .filter((r: any) => r.route)
+    const routes = (app as any)._router?.stack
+        ?.filter((r: any) => r.route)
         .map((r: any) => `${Object.keys(r.route.methods).join(',').toUpperCase()} ${r.route.path}`);
-    console.debug('Registered routes:', routes);
+    
+    if (routes) {
+        console.debug('Registered routes:', routes);
+    }
 
     res.status(404).json({
         error: "Route not found",
