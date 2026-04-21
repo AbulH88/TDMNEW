@@ -6,10 +6,12 @@ import Header from "@/components/Header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 import { API_ENDPOINTS } from "@/constants";
 
 // page for making api calls to different systems
 function ApiCall() {
+  const { hasPermission } = useAuth();
   // state for the form inputs
   const [requestType, setRequestType] = useState("initial");
   const [dataType, setDataType] = useState("static");
@@ -196,7 +198,7 @@ function ApiCall() {
 
                   <Button
                     onClick={handleStaticApiCall}
-                    disabled={isLoadingStatic}
+                    disabled={isLoadingStatic || !hasPermission('create')}
                     className="w-full bg-blue-600 mb-8"
                   >
                     {isLoadingStatic ? "Processing..." : "Submit Static Request"}
@@ -262,7 +264,7 @@ function ApiCall() {
                   
                   <Button
                     onClick={handleApiCall}
-                    disabled={isLoading}
+                    disabled={isLoading || !hasPermission('create')}
                     className="w-full bg-blue-600 mb-8"
                   >
                     {isLoading ? "Calling API..." : "Send Custom Request"}

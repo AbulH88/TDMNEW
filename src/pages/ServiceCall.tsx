@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataRow, { DataField } from "@/components/DataRow";
 import { useToast } from "../hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -35,6 +36,7 @@ import FormatSelector from "@/components/FormatSelector";
 
 const ServiceCall = () => {
     const { toast } = useToast();
+    const { hasPermission } = useAuth();
     
     // Mode selector
     const [activeMode, setActiveMode] = useState<"retrieve" | "create" | "delete">("retrieve");
@@ -650,19 +652,19 @@ const downloadFile = (data: any, name: string, fmt: string) => {
                 <div className="flex justify-center gap-4 mb-10">
                     <Button 
                         onClick={() => setActiveMode("retrieve")}
-                        disabled={!canRetrieve}
+                        disabled={!canRetrieve || !hasPermission('read_only')}
                         className={activeMode === "retrieve" ? "bg-blue-600" : "bg-gray-300 text-black hover:text-white"}>
                         Retrieve Data
                     </Button>
                     <Button
                         onClick={() => setActiveMode("create")}
-                        disabled={!canCreate}
+                        disabled={!canCreate || !hasPermission('create')}
                         className={activeMode === "create" ? "bg-green-600" : "bg-gray-300 text-black hover:text-white"}>
                         Create Data
                     </Button>
                     <Button
                         onClick={() => setActiveMode("delete")}
-                        disabled={!canDelete}
+                        disabled={!canDelete || !hasPermission('delete')}
                         className={activeMode === "delete" ? "bg-red-700" : "bg-gray-300 text-black hover:text-white"}>
                         Delete Data
                     </Button>

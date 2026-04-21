@@ -12,6 +12,7 @@ import GeneratedOutput from "@/components/GeneratedOutput";
 import { DATA_TYPES } from "@/components/DataTypeSelector";
 import { generateData } from "@/lib/dataGenerator";
 import { useToast } from "../hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { API_ENDPOINTS } from "@/constants";
 
 const ENVIRONMENTS = ["Q1", "Q2", "Q3", "Q4", "Q5"];
@@ -19,6 +20,7 @@ const ENVIRONMENTS = ["Q1", "Q2", "Q3", "Q4", "Q5"];
 // main page for the data generator tool
 function Index() {
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
   
   // state for the form
   const [fields, setFields] = useState<DataField[]>([]);
@@ -219,7 +221,11 @@ function Index() {
                   min={1}
                 />
               </div>
-              <Button onClick={handleGenerate} className="bg-blue-600 hover:bg-blue-700 gap-2">
+              <Button 
+                onClick={handleGenerate} 
+                disabled={!hasPermission('create')}
+                className="bg-blue-600 hover:bg-blue-700 gap-2"
+              >
                 <Sparkles className="h-4 w-4" /> Create Data
               </Button>
             </div>

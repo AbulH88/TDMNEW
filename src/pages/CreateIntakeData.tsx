@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataRow, { DataField } from "@/components/DataRow";
 import { useToast } from "../hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { Textarea } from "@/components/ui/textarea";
 import {
     AlertDialog,
@@ -25,6 +26,7 @@ const DEFAULT_FIELDS: DataField[] = [];
 
 const CreateIntakeData = () => {
     const { toast } = useToast();
+    const { hasPermission } = useAuth();
     const [intakeFields, setIntakeFields] = useState<DataField[]>([]);
     const [intakeOutput, setIntakeOutput] = useState<Record<string, any>[] | string | null>(null);
     const [environment, setEnvironment] = useState<string>("Q1");
@@ -313,7 +315,7 @@ const CreateIntakeData = () => {
                                 <div className="flex gap-2 mt-4">
                                     <Button
                                         onClick={() => setCreateConfirmOpen(true)}
-                                        disabled={isIntakeLoading || !selectedService}
+                                        disabled={isIntakeLoading || !selectedService || !hasPermission('create')}
                                         className="w-full bg-green-500 hover:bg-green-600 text-primary-foreground py-2 rounded"
                                     >
                                         {isIntakeLoading ? "Processing..." : "Create Intake Data"} <Plus className="h-4 w-4 ml-2"/>

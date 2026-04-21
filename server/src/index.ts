@@ -513,7 +513,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Fetch Schema
-app.get("/api/service-schema", authMiddleware, async (req, res) => {
+app.get("/api/service-schema", authMiddleware, requirePermission('read_only'), async (req, res) => {
     const { environment, serviceType } = req.query;
 
     // Parameter validation
@@ -527,7 +527,7 @@ app.get("/api/service-schema", authMiddleware, async (req, res) => {
 });
 
 // Retrieve
-app.post('/api/retrieve-data', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/retrieve-data', authMiddleware, requirePermission('read_only'), async (req: Request, res: Response) => {
     const { environment, serviceType, selectedColumnNames } = req.body;
 
     // Parameter validation
@@ -542,7 +542,7 @@ app.post('/api/retrieve-data', authMiddleware, async (req: Request, res: Respons
 
 });
 
-app.post('/api/service-execute', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/service-execute', authMiddleware, requirePermission('read_only'), async (req: Request, res: Response) => {
     const { environment, serviceType, selectedColumnNames } = req.body;
 
     // Parameter validation
@@ -558,7 +558,7 @@ app.post('/api/service-execute', authMiddleware, async (req: Request, res: Respo
 });
 
 // Create
-app.post('/api/create-data', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/create-data', authMiddleware, requirePermission('create'), async (req: Request, res: Response) => {
     const { environment, serviceType } = req.body;
 
     // Parameter validation
@@ -572,7 +572,7 @@ app.post('/api/create-data', authMiddleware, async (req: Request, res: Response)
     return svc.create(req, res, ctx);
 });
 
-app.post('/api/create-intake-data', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/create-intake-data', authMiddleware, requirePermission('create'), async (req: Request, res: Response) => {
     const { environment, serviceType } = req.body;
 
     // Parameter validation
@@ -587,7 +587,7 @@ app.post('/api/create-intake-data', authMiddleware, async (req: Request, res: Re
 });
 
 // Delete
-app.post('/api/delete-data', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/delete-data', authMiddleware, requirePermission('delete'), async (req: Request, res: Response) => {
     const { environment, serviceType } = req.body;
 
     // Parameter validation
@@ -612,7 +612,7 @@ import { DOMParser } from "@xmldom/xmldom";
 const testResultsXML = "../test-results.xml";
 
 // Parses test-results.xml and returns as JSON
-app.get("/api/test-results", authMiddleware, async (req: Request, res: Response) => {
+app.get("/api/test-results", authMiddleware, requirePermission('read_only'), async (req: Request, res: Response) => {
     try {
         const xml = readFileSync(testResultsXML, "utf8");
         const doc = new DOMParser().parseFromString(xml, "text/xml");
