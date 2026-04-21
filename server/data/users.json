@@ -4,6 +4,7 @@
     "username": "admin",
     "passwordHash": "$2b$10$9ZVVxxcfEF10O1DDsEsPluXCtPimEB3jkwBswHWMOBQPhz1wy.UyW",
     "role": "admin",
-    "permissions": ["read:generator", "write:generator", "read:services", "write:services", "read:tests", "admin"]
+    "permissions": ["read_only", "create", "edit", "delete", "admin"],
+    "mustChangePassword": false
   }
 ]

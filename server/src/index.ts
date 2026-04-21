@@ -32,7 +32,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 const USERS_FILE = path.join(__dirname, '../data/users.json');
 
 // ================================================================
-//                          CRITICAL DIAGNOSTIC LOGIN
+//                          AUTHENTICATION
 // ================================================================
 app.post('/api/auth/login', async (req: Request, res: Response) => {
     console.log(`[AUTH] Login attempt for: ${req.body?.username}`);
@@ -123,7 +123,7 @@ app.post('/api/auth/logout', (req: Request, res: Response) => {
 });
 
 // ================================================================
-//                          GLOBAL INTERCEPTOR (FORCED)
+//                          GLOBAL INTERCEPTOR
 // ================================================================
 
 // Request logging middleware for debugging
@@ -134,7 +134,7 @@ app.use((req, res, next) => {
 
 // Health check to verify backend is running latest code
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', version: 'diagnostics-active', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', version: 'active', timestamp: new Date().toISOString() });
 });
 
 const API_USER_ID = process.env.API_USER_ID;
