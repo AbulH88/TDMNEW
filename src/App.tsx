@@ -40,22 +40,22 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/service-call" element={
-                <ProtectedRoute permission="read:services">
+                <ProtectedRoute permission="read_only">
                   <ServiceCall />
                 </ProtectedRoute>
               } />
               <Route path="/api-call" element={
-                <ProtectedRoute permission="read:services">
+                <ProtectedRoute permission="read_only">
                   <ApiCall />
                 </ProtectedRoute>
               } />
               <Route path="/generator" element={
-                <ProtectedRoute permission="read:generator">
+                <ProtectedRoute permission="read_only">
                   <Index />
                 </ProtectedRoute>
               } />
               <Route path="/tests" element={
-                <ProtectedRoute permission="read:tests">
+                <ProtectedRoute permission="read_only">
                   <Tests />
                 </ProtectedRoute>
               } />
