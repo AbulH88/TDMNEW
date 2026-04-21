@@ -59,10 +59,40 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
         });
         
         console.log(`[AUTH] Success login for: ${username}`);
-        res.json({ id: user.id, username: user.username, role: user.role, permissions: user.permissions });
+        res.json({ 
+            id: user.id, 
+            username: user.username, 
+            role: user.role, 
+            permissions: user.permissions,
+            mustChangePassword: !!user.mustChangePassword 
+        });
     } catch (err) {
         console.error(`[AUTH] Error:`, err);
         res.status(500).json({ error: 'Auth error', details: (err as Error).message });
+    }
+});
+
+app.post('/api/auth/change-password', authMiddleware, async (req: Request, res: Response) => {
+    const { newPassword } = req.body;
+    const userId = (req as any).user.id;
+
+    if (!newPassword || newPassword.length < 8 || newPassword.length > 12) {
+        return res.status(400).json({ error: 'Password must be between 8 and 12 characters.' });
+    }
+
+    try {
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        const userIndex = users.findIndex((u: any) => u.id === userId);
+
+        if (userIndex === -1) return res.status(404).json({ error: 'User not found.' });
+
+        users[userIndex].passwordHash = bcrypt.hashSync(newPassword, 10);
+        users[userIndex].mustChangePassword = false;
+
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+        res.json({ message: 'Password changed successfully.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to change password.' });
     }
 });
 
@@ -350,6 +380,10 @@ app.post('/api/users', authMiddleware, requireAdmin, (req: Request, res: Respons
         return errorResponse(res, 400, 'Username, password, and role are required.');
     }
 
+    if (password.length < 8 || password.length > 12) {
+        return errorResponse(res, 400, 'Password must be between 8 and 12 characters.');
+    }
+
     try {
         const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
 
@@ -362,7 +396,8 @@ app.post('/api/users', authMiddleware, requireAdmin, (req: Request, res: Respons
             username,
             passwordHash: bcrypt.hashSync(password, 10),
             role,
-            permissions: permissions || []
+            permissions: permissions || [],
+            mustChangePassword: true
         };
 
         users.push(newUser);

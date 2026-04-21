@@ -53,11 +53,10 @@ interface User {
 }
 
 const AVAILABLE_PERMISSIONS = [
-    { id: 'read:generator', label: 'Read Generator', description: 'Can view the data generator' },
-    { id: 'write:generator', label: 'Write Generator', description: 'Can generate new test data' },
-    { id: 'read:services', label: 'Read Services', description: 'Can view integrated services' },
-    { id: 'write:services', label: 'Write Services', description: 'Can execute service calls' },
-    { id: 'read:tests', label: 'Read Health Check', description: 'Can view health status' },
+    { id: 'create', label: 'Create', description: 'Can create new test data' },
+    { id: 'edit', label: 'Edit', description: 'Can edit existing test data' },
+    { id: 'delete', label: 'Delete', description: 'Can delete test data' },
+    { id: 'read_only', label: 'Read Only', description: 'Can only view data' },
     { id: 'admin', label: 'Admin Access', description: 'Full system management' },
 ];
 
@@ -70,14 +69,14 @@ const Admin = () => {
     // New User State
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [newRole, setNewRole] = useState('user');
+    const [newRole, setNewRole] = useState('qa');
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
 
     // Edit User State
     const [isEditUserOpen, setIsEditUserOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [editRole, setEditRole] = useState('user');
+    const [editRole, setEditRole] = useState('qa');
     const [editPermissions, setEditPermissions] = useState<string[]>([]);
     const [editPassword, setEditPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -169,7 +168,7 @@ const Admin = () => {
     const resetForm = () => {
         setNewUsername('');
         setNewPassword('');
-        setNewRole('user');
+        setNewRole('qa');
         setSelectedPermissions([]);
         setIsAddUserOpen(false);
     };
@@ -260,7 +259,8 @@ const Admin = () => {
                                                         <SelectValue placeholder="Select role" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="user">Standard User</SelectItem>
+                                                        <SelectItem value="qa">QA</SelectItem>
+                                                        <SelectItem value="developer">Developer</SelectItem>
                                                         <SelectItem value="admin">Administrator</SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -416,7 +416,8 @@ const Admin = () => {
                                     <SelectContent>
                                         <SelectItem value="all">All Roles</SelectItem>
                                         <SelectItem value="admin">Administrators</SelectItem>
-                                        <SelectItem value="user">Standard Users</SelectItem>
+                                        <SelectItem value="qa">QA</SelectItem>
+                                        <SelectItem value="developer">Developer</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -571,7 +572,8 @@ const Admin = () => {
                                             <SelectValue placeholder="Select role" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="user">Standard User</SelectItem>
+                                            <SelectItem value="qa">QA</SelectItem>
+                                            <SelectItem value="developer">Developer</SelectItem>
                                             <SelectItem value="admin">Administrator</SelectItem>
                                         </SelectContent>
                                     </Select>

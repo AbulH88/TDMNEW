@@ -36,6 +36,20 @@ export const apiService = {
         return await response.json();
     },
 
+    changePassword: async (newPassword: string) => {
+        const response = await fetch("/api/auth/change-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ newPassword }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Failed to change password");
+        }
+        return await response.json();
+    },
+
     // User management (Admin only)
     fetchUsers: async () => {
         const response = await fetch(API_ENDPOINTS.USERS);
