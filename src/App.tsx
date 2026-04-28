@@ -12,7 +12,6 @@ import ServiceCall from "./pages/ServiceCall";
 import HelpWidget from "./components/HelpWidget";
 import Tests from "./pages/Tests";
 import Login from "./pages/Login";
-import Admin from "./pages/Admin";
 import UserManual from "./pages/UserManual";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
@@ -62,13 +61,6 @@ function App() {
               <Route path="/manual" element={
                 <ProtectedRoute>
                   <UserManual />
-                </ProtectedRoute>
-              } />
-
-              {/* Admin only route */}
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin>
-                  <Admin />
                 </ProtectedRoute>
               } />
 

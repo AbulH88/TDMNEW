@@ -5,11 +5,10 @@ import { useAuth } from '@/context/AuthContext';
 interface ProtectedRouteProps {
     children: React.ReactNode;
     permission?: string;
-    requireAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permission, requireAdmin }) => {
-    const { user, loading, hasPermission, isAdmin } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permission }) => {
+    const { user, loading, hasPermission } = useAuth();
     const location = useLocation();
 
     if (loading) {
@@ -23,11 +22,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permission, r
     if (!user) {
         // Redirect to login if not authenticated
         return <Navigate to="/login" state={{ from: location }} replace />;
-    }
-
-    if (requireAdmin && !isAdmin) {
-        // Redirect to home if admin is required but user is not admin
-        return <Navigate to="/" replace />;
     }
 
     if (permission && !hasPermission(permission)) {

@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '@/services/apiService';
 
 interface User {
-    id: string;
     username: string;
     role: string;
     permissions: string[];
@@ -14,7 +13,6 @@ interface AuthContextType {
     login: (userData: User) => void;
     logout: () => Promise<void>;
     hasPermission: (permission: string) => boolean;
-    isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,15 +51,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const hasPermission = (permission: string) => {
-        if (!user) return false;
-        if (user.role === 'admin') return true;
-        return user.permissions.includes(permission);
+        return !!user; // In this SQL-login model, any logged in user has all permissions
     };
 
-    const isAdmin = user?.role === 'admin' || false;
-
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, hasPermission, isAdmin }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, hasPermission }}>
             {children}
         </AuthContext.Provider>
     );

@@ -4,7 +4,7 @@ import type oracledb from "oracledb";
 export type SchemaMode = "query" | "create-intake";
 
 export type ServiceContext = {
-  executeWithConnection: <T>(cb: (c: oracledb.Connection) => Promise<T>, env: string) => Promise<T>;
+  executeWithConnection: <T>(cb: (c: oracledb.Connection) => Promise<T>, env: string, req?: Request) => Promise<T>;
   errorResponse: (res: Response, status: number, error: string, details?: string) => void;
   serializeOracleRow: (row: any) => Record<string, any>;
   normalizeDob: (x: unknown) => string;

@@ -151,7 +151,7 @@ const mod: ServiceModule = {
             try {
                 const result = await ctx.executeWithConnection(async (connection) => {
                     return await connection.execute(sql, bindParams, { outFormat: oracledb.OUT_FORMAT_OBJECT });
-                }, env);
+                }, env, req);
 
                 const data = result.rows && result.rows.length > 0
                     ? result.rows.map((row: any) => ctx.serializeOracleRow(row))
@@ -204,7 +204,7 @@ const mod: ServiceModule = {
             try {
                 const result = await ctx.executeWithConnection(async (connection) => {
                     return await connection.execute(sql, [daysBack], { outFormat: oracledb.OUT_FORMAT_OBJECT });
-                }, env);
+                }, env, req);
 
                 const data = result.rows && result.rows.length > 0
                     ? result.rows.map((row: any) => ctx.serializeOracleRow(row))
@@ -262,7 +262,7 @@ const mod: ServiceModule = {
                         [txnStatCd, hpName],
                         { outFormat: oracledb.OUT_FORMAT_OBJECT }
                     );
-                }, env);
+                }, env, req);
 
                 const data = result.rows && result.rows.length > 0
                     ? result.rows.map((row: any) => ctx.serializeOracleRow(row))

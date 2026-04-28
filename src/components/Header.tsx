@@ -47,15 +47,6 @@ function Header() {
           >
             Health Check
           </NavLink>
-          {isAdmin && (
-            <NavLink
-              to="/admin"
-              className="text-gray-500 hover:text-black transition-all"
-              activeClassName="text-black font-bold"
-            >
-              Admin
-            </NavLink>
-          )}
         </nav>
 
         <div className="flex items-center gap-4">
@@ -76,12 +67,6 @@ function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {isAdmin && (
-                  <DropdownMenuItem onClick={() => window.location.href = '/admin'}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>User Management</span>
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>

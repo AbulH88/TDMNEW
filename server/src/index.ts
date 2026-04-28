@@ -7,13 +7,11 @@ import oracledb from 'oracledb';
 oracledb.fetchAsString = [oracledb.CLOB]; // ensures we can return CLOB columns as normal strings
 import fetch from 'node-fetch';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import fs from 'fs';
 
 // Modular services
 import { getService, allowedServiceTypes } from "./services/registry";
 import type { ServiceContext } from "./services/types";
-import { authMiddleware, requireAdmin, requirePermission, AuthenticatedRequest } from './middleware/auth';
+import { authMiddleware, requireAdmin, requirePermission, AuthenticatedRequest, encrypt } from './middleware/auth';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -29,27 +27,43 @@ app.use(express.json());
 app.use(cookieParser());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
-const USERS_FILE = path.join(__dirname, '../data/users.json');
 
 // ================================================================
 //                          AUTHENTICATION
 // ================================================================
 app.post('/api/auth/login', async (req: Request, res: Response) => {
-    console.log(`[AUTH] Login attempt for: ${req.body?.username}`);
-    const { username, password } = req.body;
+    console.log(`[AUTH] SQL Login attempt for: ${req.body?.username}`);
+    const { username, password, environment } = req.body;
     
-    if (!username || !password) return res.status(400).json({ error: 'Username and password are required.' });
+    if (!username || !password || !environment) {
+        return res.status(400).json({ error: 'Username, password, and environment are required.' });
+    }
 
+    if (!isAllowedEnvironment(environment)) {
+        return res.status(400).json({ error: 'Invalid environment.' });
+    }
+
+    let connection;
     try {
-        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        const user = users.find((u: any) => u.username === username);
-
-        if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
-            console.log(`[AUTH] Failed login for: ${username}`);
-            return res.status(401).json({ error: 'Invalid username or password.' });
-        }
-
-        const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+        // Attempt to connect to Oracle to verify credentials
+        const connectionString = getOracleConnectionString(environment);
+        connection = await oracledb.getConnection({
+            user: username,
+            password: password,
+            connectString: connectionString
+        });
+        
+        console.log(`[AUTH] Success SQL login for: ${username}`);
+        
+        // Encrypt password for storage in JWT
+        const dbPassEnc = encrypt(password);
+        
+        const token = jwt.sign({ 
+            username: username, 
+            dbUser: username, 
+            dbPassEnc: dbPassEnc,
+            environment: environment
+        }, JWT_SECRET, { expiresIn: '8h' });
         
         res.cookie('token', token, { 
             httpOnly: true, 
@@ -58,63 +72,31 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
             maxAge: 8 * 60 * 60 * 1000 // 8 hours
         });
         
-        console.log(`[AUTH] Success login for: ${username}`);
         res.json({ 
-            id: user.id, 
-            username: user.username, 
-            role: user.role, 
-            permissions: user.permissions,
-            mustChangePassword: !!user.mustChangePassword 
+            username: username, 
+            role: 'admin', 
+            permissions: ['read_only', 'create', 'delete'],
+            environment: environment
         });
     } catch (err) {
-        console.error(`[AUTH] Error:`, err);
-        res.status(500).json({ error: 'Auth error', details: (err as Error).message });
-    }
-});
-
-app.post('/api/auth/change-password', authMiddleware, async (req: Request, res: Response) => {
-    const { newPassword } = req.body;
-    const userId = (req as any).user.id;
-
-    if (!newPassword || newPassword.length < 8 || newPassword.length > 12) {
-        return res.status(400).json({ error: 'Password must be between 8 and 12 characters.' });
-    }
-
-    try {
-        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        const userIndex = users.findIndex((u: any) => u.id === userId);
-
-        if (userIndex === -1) return res.status(404).json({ error: 'User not found.' });
-
-        users[userIndex].passwordHash = bcrypt.hashSync(newPassword, 10);
-        users[userIndex].mustChangePassword = false;
-
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        res.json({ message: 'Password changed successfully.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to change password.' });
+        console.error(`[AUTH] Oracle Login Failed for ${username}:`, err);
+        res.status(401).json({ error: 'Invalid SQL credentials or database connection issue.', details: (err as Error).message });
+    } finally {
+        if (connection) {
+            try { await connection.close(); } catch (e) {}
+        }
     }
 });
 
 app.get('/api/auth/me', authMiddleware, (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = (req as AuthenticatedRequest).user;
     if (!user) return res.status(401).json({ error: 'Not authenticated' });
     
-    // Fetch latest user data to include permissions
-    try {
-        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        const dbUser = users.find((u: any) => u.id === user.id);
-        if (!dbUser) return res.status(401).json({ error: 'User no longer exists' });
-
-        res.json({ 
-            id: dbUser.id, 
-            username: dbUser.username, 
-            role: dbUser.role, 
-            permissions: dbUser.permissions 
-        });
-    } catch (err) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
+    res.json({ 
+        username: user.username, 
+        role: user.role, 
+        permissions: user.permissions 
+    });
 });
 
 app.post('/api/auth/logout', (req: Request, res: Response) => {
@@ -140,12 +122,13 @@ app.get('/api/health', (req, res) => {
 const API_USER_ID = process.env.API_USER_ID;
 const API_PASSWORD = process.env.API_PASSWORD;
 const EXTERNAL_API_DOMAIN_CORE = process.env.EXTERNAL_API_DOMAIN_CORE || 'localhost:8081';
-const DB_USER = process.env.DB_USER;
-const DB_PASSWORD = process.env.DB_PASSWORD;
-const ALLOWED_ENVIRONMENTS = ["Q1"] as const;
+const ALLOWED_ENVIRONMENTS = ["Q1", "Q2", "Q3", "PROD"] as const;
 
 const ORACLE_CONFIG: Record<string, { hostName: string; host: string }> = {
-    Q1: { hostName: "ccxqat_adhoc", host: "qa1dbccx-scan" }
+    Q1: { hostName: "ccxqat_adhoc", host: "qa1dbccx-scan" },
+    Q2: { hostName: "ccxqa2_adhoc", host: "qa2dbccx-scan" },
+    Q3: { hostName: "ccxqa3_adhoc", host: "qa3dbccx-scan" },
+    PROD: { hostName: "ccxprod_adhoc", host: "proddbccx-scan" }
 };
 
 const isAllowedEnvironment = (environment: string): boolean => {
@@ -185,14 +168,25 @@ const getOracleConnectionString = (env: string): string => {
 
 const executeWithConnection = async <T>(
     callback: (connection: oracledb.Connection) => Promise<T>,
-    environment: string
+    environment: string,
+    req?: Request
 ): Promise<T> => {
     let connection: oracledb.Connection | undefined;
     try {
         const connectionString = getOracleConnectionString(environment);
+        
+        // Use credentials from request if available
+        const user = (req as AuthenticatedRequest)?.user;
+        const dbUser = user?.dbUser || process.env.DB_USER;
+        const dbPass = user?.dbPass || process.env.DB_PASSWORD;
+
+        if (!dbUser || !dbPass) {
+            throw new Error("No database credentials provided.");
+        }
+
         connection = await oracledb.getConnection({
-            user: DB_USER,
-            password: DB_PASSWORD,
+            user: dbUser,
+            password: dbPass,
             connectString: connectionString
         });
         return await callback(connection);
@@ -380,110 +374,6 @@ function formatDob(date: Date): string {
     const yyyy = String(date.getFullYear());
     return dd + "-" + mon + "-" + yyyy;
 }
-
-// ================================================================
-//                          USER MANAGEMENT
-// ================================================================
-
-app.get('/api/users', authMiddleware, requireAdmin, (req: Request, res: Response) => {
-    try {
-        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        // Don't return password hashes
-        const usersSafe = users.map((u: any) => {
-            const { passwordHash, ...safe } = u;
-            return safe;
-        });
-        res.json(usersSafe);
-    } catch (err) {
-        errorResponse(res, 500, 'Failed to fetch users.', (err as Error).message);
-    }
-});
-
-app.post('/api/users', authMiddleware, requireAdmin, (req: Request, res: Response) => {
-    const { username, password, role, permissions } = req.body;
-
-    if (!username || !password || !role) {
-        return errorResponse(res, 400, 'Username, password, and role are required.');
-    }
-
-    if (password.length < 8 || password.length > 12) {
-        return errorResponse(res, 400, 'Password must be between 8 and 12 characters.');
-    }
-
-    try {
-        const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-
-        if (users.find((u: any) => u.username === username)) {
-            return errorResponse(res, 400, 'Username already exists.');
-        }
-
-        const newUser = {
-            id: Date.now().toString(),
-            username,
-            passwordHash: bcrypt.hashSync(password, 10),
-            role,
-            permissions: permissions || [],
-            mustChangePassword: true
-        };
-
-        users.push(newUser);
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-
-        const { passwordHash, ...safeUser } = newUser;
-        res.json(safeUser);
-    } catch (err) {
-        errorResponse(res, 500, 'Failed to create user.', (err as Error).message);
-    }
-});
-
-app.put('/api/users/:id', authMiddleware, requireAdmin, (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { role, permissions, password } = req.body;
-
-    try {
-        let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        const userIndex = users.findIndex((u: any) => u.id === id);
-
-        if (userIndex === -1) {
-            return errorResponse(res, 404, 'User not found.');
-        }
-
-        // Update fields if provided
-        if (role) users[userIndex].role = role;
-        if (permissions) users[userIndex].permissions = permissions;
-        if (password) users[userIndex].passwordHash = bcrypt.hashSync(password, 10);
-
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        
-        const { passwordHash, ...safeUser } = users[userIndex];
-        res.json(safeUser);
-    } catch (err) {
-        errorResponse(res, 500, 'Failed to update user.', (err as Error).message);
-    }
-});
-
-app.delete('/api/users/:id', authMiddleware, requireAdmin, (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    if (id === '1') {
-        return errorResponse(res, 400, 'Cannot delete the primary admin user.');
-    }
-
-    try {
-        let users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-        const initialLength = users.length;
-        users = users.filter((u: any) => u.id !== id);
-
-        if (users.length === initialLength) {
-            return errorResponse(res, 404, 'User not found.');
-        }
-
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        res.json({ message: 'User deleted successfully' });
-    } catch (err) {
-        errorResponse(res, 500, 'Failed to delete user.', (err as Error).message);
-    }
-});
 
 const ctx: ServiceContext = {
     executeWithConnection,

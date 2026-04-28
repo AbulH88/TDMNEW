@@ -134,7 +134,7 @@ const mod: ServiceModule = {
             // For query mode, return columns from database query
             const result = await ctx.executeWithConnection(async (connection) => {
                 return await connection.execute(PATIENT_DATA_QUERY, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
-            }, environment as string);
+            }, environment as string, req);
     
             let schemaFields = result.metaData?.map((col: oracledb.Metadata<any>, index: number) => ({
                 id: `${index}-${col.name}`,
@@ -276,7 +276,8 @@ const mod: ServiceModule = {
                         outFormat: oracledb.OUT_FORMAT_OBJECT,
                     });
                 },
-                env
+                env,
+                req
             );
 
             const data = result.rows && result.rows.length > 0

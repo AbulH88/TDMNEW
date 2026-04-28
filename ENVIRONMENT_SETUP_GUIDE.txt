@@ -1,0 +1,55 @@
+# TDM Portal - Environment Configuration Guide
+
+This guide explains how to update the Service URLs and Oracle Database configurations for the new environments (Q2, Q3, PROD).
+
+## 1. Updating Oracle Database Connections
+The database connection strings are dynamically generated in the backend based on the environment selected during login.
+
+**File:** `server/src/index.ts`
+**Location:** Look for the `ORACLE_CONFIG` constant (around line 125).
+
+```typescript
+const ORACLE_CONFIG: Record<string, { hostName: string; host: string }> = {
+    Q1: { hostName: "ccxqat_adhoc", host: "qa1dbccx-scan" },
+    Q2: { hostName: "ccxqa2_adhoc", host: "qa2dbccx-scan" }, // Update these
+    Q3: { hostName: "ccxqa3_adhoc", host: "qa3dbccx-scan" }, // Update these
+    PROD: { hostName: "ccxprod_adhoc", host: "proddbccx-scan" } // Update these
+};
+```
+*   `host`: The scan address or IP of the Oracle DB.
+*   `hostName`: The Service Name (SID) for that environment.
+
+## 2. Updating External API / Core Service URLs
+The system proxies calls to external APIs. If the environments have unique domains that don't follow a standard prefix, follow these steps.
+
+**File:** `server/src/index.ts`
+**Change:** Replace the existing `getExternalApiBaseUrl` function with a mapping.
+
+**Current Logic:**
+```typescript
+const getExternalApiBaseUrl = (env: string): string => {
+    const envPrefix = env.toLowerCase();
+    return `https://${envPrefix}-${EXTERNAL_API_DOMAIN_CORE}`;
+};
+```
+
+**Recommended Logic for Unique URLs:**
+```typescript
+const API_URL_MAP: Record<string, string> = {
+    Q1: "https://q1-core-services.yourcompany.com",
+    Q2: "https://qa2-api-internal.yourcompany.com",
+    Q3: "https://staging-services.yourcompany.com",
+    PROD: "https://production-core.yourcompany.com"
+};
+
+const getExternalApiBaseUrl = (env: string): string => {
+    return API_URL_MAP[env.toUpperCase()] || API_URL_MAP['Q1'];
+};
+```
+
+## 3. JWT Encryption Key
+For security, ensure you set a unique `ENCRYPTION_KEY` in your `.env` file (32 characters) to protect SQL credentials stored in the browser cookie.
+
+```env
+ENCRYPTION_KEY=your-super-secret-32-char-key-!!!
+```
