@@ -32,8 +32,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 //                          AUTHENTICATION
 // ================================================================
 app.post('/api/auth/login', async (req: Request, res: Response) => {
-    console.log(`[AUTH] SQL Login attempt for: ${req.body?.username}`);
-    const { username, password, environment } = req.body;
+    let { username, password, environment } = req.body;
+    
+    // Check if payload is masked (Base64)
+    if (req.body.payload) {
+        try {
+            const decoded = JSON.parse(Buffer.from(req.body.payload, 'base64').toString());
+            username = decoded.username;
+            password = decoded.password;
+            environment = decoded.environment;
+        } catch (e) {
+            console.error('[AUTH] Failed to decode masked payload:', e);
+            return res.status(400).json({ error: 'Invalid payload format.' });
+        }
+    }
+
+    console.log(`[AUTH] SQL Login attempt for: ${username}`);
     
     if (!username || !password || !environment) {
         return res.status(400).json({ error: 'Username, password, and environment are required.' });

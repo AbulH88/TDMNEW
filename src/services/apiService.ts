@@ -7,10 +7,13 @@ export const apiService = {
 
     // Auth methods
     login: async (username: string, password: string, environment: string) => {
+        // Simple masking to hide plain text from casual observation in DevTools
+        const payload = btoa(JSON.stringify({ username, password, environment }));
+        
         const response = await fetch(API_ENDPOINTS.LOGIN, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password, environment }),
+            body: JSON.stringify({ payload }),
         });
 
         if (!response.ok) {
