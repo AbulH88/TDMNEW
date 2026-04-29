@@ -1,4 +1,4 @@
-export const ENVIRONMENTS = ["Q1", "Q2", "Q3", "PROD"];
+export const ENVIRONMENTS = ["Q1", "Q2"];
 
 export const API_ENDPOINTS = {
     SCHEMA: '/api/service-schema',

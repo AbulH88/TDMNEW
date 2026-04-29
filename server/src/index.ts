@@ -122,13 +122,11 @@ app.get('/api/health', (req, res) => {
 const API_USER_ID = process.env.API_USER_ID;
 const API_PASSWORD = process.env.API_PASSWORD;
 const EXTERNAL_API_DOMAIN_CORE = process.env.EXTERNAL_API_DOMAIN_CORE || 'localhost:8081';
-const ALLOWED_ENVIRONMENTS = ["Q1", "Q2", "Q3", "PROD"] as const;
+const ALLOWED_ENVIRONMENTS = ["Q1", "Q2"] as const;
 
 const ORACLE_CONFIG: Record<string, { hostName: string; host: string }> = {
     Q1: { hostName: "ccxqat_adhoc", host: "qa1dbccx-scan" },
-    Q2: { hostName: "ccxqa2_adhoc", host: "qa2dbccx-scan" },
-    Q3: { hostName: "ccxqa3_adhoc", host: "qa3dbccx-scan" },
-    PROD: { hostName: "ccxprod_adhoc", host: "proddbccx-scan" }
+    Q2: { hostName: "ccxsup_adhoc", host: "ccxsup_adhoc.world" }
 };
 
 const isAllowedEnvironment = (environment: string): boolean => {

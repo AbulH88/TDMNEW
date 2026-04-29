@@ -13,9 +13,7 @@ import { DATA_TYPES } from "@/components/DataTypeSelector";
 import { generateData } from "@/lib/dataGenerator";
 import { useToast } from "../hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { API_ENDPOINTS } from "@/constants";
-
-const ENVIRONMENTS = ["Q1", "Q2", "Q3", "Q4", "Q5"];
+import { API_ENDPOINTS, ENVIRONMENTS } from "@/constants";
 
 // main page for the data generator tool
 function Index() {
