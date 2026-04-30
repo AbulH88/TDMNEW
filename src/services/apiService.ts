@@ -12,38 +12,10 @@ const MASK_KEY = "tdm-portal-secure-mask";
 // this is just to wrap our fetch calls in one place
 export const apiService = {
 
-    // Auth methods
-    // login: async (username: string, password: string, environment: string) => {
-    //     const response = await fetch(API_ENDPOINTS.LOGIN, {
-    //         method: "POST",
-    //         headers: { "Content-Type": "application/json" },
-    //         body: JSON.stringify({ username, password, environment }),
-    //     });
-
-    //     if (!response.ok) {
-    //         const error = await response.json();
-    //         throw new Error(error.error || "Login failed");
-    //     }
-    //     return await response.json();
-    // },
-
-    // login: async (username: string, password: string, environment: string) => {
-    //          // Simple masking to hide plain text from casual observation in DevTools
-    //          const payload = btoa(JSON.stringify({ username, password, environment }));
-    
-    //          const response = await fetch(API_ENDPOINTS.LOGIN, {
-    //              method: "POST",
-    //              headers: { "Content-Type": "application/json" },
-    //              body: JSON.stringify({ payload }),
-    //         });
-    
-    // },
-
-   
     login: async (username: string, password: string, environment: string) => {
         const jsonString = JSON.stringify({ username, password, environment });
         
-        // Mask the payload
+        // Mask the payload using XOR + Base64
         const payload = btoa(xorMask(jsonString, MASK_KEY));
         
         const response = await fetch(API_ENDPOINTS.LOGIN, {
