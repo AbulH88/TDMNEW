@@ -6,13 +6,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'a-very-secret-key-32-chars-long!!'; // Must be 32 chars
 const IV_LENGTH = 16;
 
+// function encrypt(text: string) {
+//     const iv = crypto.randomBytes(IV_LENGTH);
+//     const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)), iv);
+//     let encrypted = cipher.update(text);
+//     encrypted = Buffer.concat([encrypted, cipher.final()]);
+//     return iv.toString('hex') + ':' + encrypted.toString('hex');
+// }
+
 function encrypt(text: string) {
-    const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)), iv);
-    let encrypted = cipher.update(text);
-    encrypted = Buffer.concat([encrypted, cipher.final()]);
-    return iv.toString('hex') + ':' + encrypted.toString('hex');
-}
+            const iv = crypto.randomBytes(IV_LENGTH);
+            const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)), iv);
+            let encrypted = cipher.update(text);
+            encrypted = Buffer.concat([encrypted, cipher.final()]);
+            return iv.toString('hex') + ':' + encrypted.toString('hex');
+        }
 
 function decrypt(text: string) {
     const textParts = text.split(':');

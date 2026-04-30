@@ -56,7 +56,7 @@ const Login = () => {
                 </div>
 
                 <div className="text-center space-y-2">
-                    <h2 className="text-3xl font-bold tracking-tight text-slate-900">Sign In</h2>
+                    {/* <h2 className="text-2xl font-bold tracking-tight text-slate-900">Sign In</h2> */}
                     <p className="text-slate-500">Enter your database credentials to connect.</p>
                 </div>
 
@@ -124,7 +124,7 @@ const Login = () => {
                             <div className="bg-blue-50/50 rounded-lg p-4 flex gap-3 border border-blue-100/50">
                                 <Info className="h-5 w-5 text-blue-600 shrink-0" />
                                 <p className="text-xs text-blue-800 leading-relaxed">
-                                    Password is encrypted and never stored in plain text. Your credentials are used exclusively to establish a secure database session.
+                                     Password is encrypted {/* and never stored in plain text. Your credentials are used exclusively to establish a secure database session. */}
                                 </p>
                             </div>
                         </CardContent>
@@ -139,17 +139,13 @@ const Login = () => {
                                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                                         Connecting...
                                     </div>
-                                ) : "Establish Secure Connection"}
+                                ) : "Log In"}
                             </Button>
                         </CardFooter>
                     </form>
                 </Card>
                 
-                <div className="flex justify-center gap-8 text-sm text-slate-400 font-medium">
-                    <button className="hover:text-blue-600 transition-colors">Documentation</button>
-                    <button className="hover:text-blue-600 transition-colors">System Status</button>
-                    <button className="hover:text-blue-600 transition-colors">IT Support</button>
-                </div>
+            
             </div>
         </div>
     );

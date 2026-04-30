@@ -13,6 +13,13 @@ import { getService, allowedServiceTypes } from "./services/registry";
 import type { ServiceContext } from "./services/types";
 import { authMiddleware, requireAdmin, requirePermission, AuthenticatedRequest, encrypt } from './middleware/auth';
 
+const xorMask = (text: string, key: string): string => {
+    return text.split('').map((char, i) => 
+        String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
+    ).join('');
+};
+
+const MASK_KEY = "tdm-portal-secure-mask";
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -31,13 +38,78 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 // ================================================================
 //                          AUTHENTICATION
 // ================================================================
+// app.post('/api/auth/login', async (req: Request, res: Response) => {
+//     console.log(`[AUTH] SQL Login attempt for: ${req.body?.username}`);
+//     const { username, password, environment } = req.body;
+    
+//     if (!username || !password || !environment) {
+//         return res.status(400).json({ error: 'Username, password, and environment are required.' });
+//     }
+
+//     if (!isAllowedEnvironment(environment)) {
+//         return res.status(400).json({ error: 'Invalid environment.' });
+//     }
+
+//     let connection;
+//     try {
+//         // Attempt to connect to Oracle to verify credentials
+//         const connectionString = getOracleConnectionString(environment);
+//         connection = await oracledb.getConnection({
+//             user: username,
+//             password: password,
+//             connectString: connectionString
+//         });
+        
+//         console.log(`[AUTH] Success SQL login for: ${username}`);
+        
+//         // Encrypt password for storage in JWT
+//         const dbPassEnc = encrypt(password);
+        
+//         const token = jwt.sign({ 
+//             username: username, 
+//             dbUser: username, 
+//             dbPassEnc: dbPassEnc,
+//             environment: environment
+//         }, JWT_SECRET, { expiresIn: '8h' });
+        
+//         res.cookie('token', token, { 
+//             httpOnly: true, 
+//             secure: process.env.NODE_ENV === 'production',
+//             sameSite: 'lax',
+//             maxAge: 8 * 60 * 60 * 1000 // 8 hours
+//         });
+        
+//         res.json({ 
+//             username: username, 
+//             role: 'admin', 
+//             permissions: ['read_only', 'create', 'delete'],
+//             environment: environment
+//         });
+//     } catch (err) {
+//         console.error(`[AUTH] Oracle Login Failed for ${username}:`, err);
+//         res.status(401).json({ error: 'Invalid SQL credentials or database connection issue.', details: (err as Error).message });
+//     } finally {
+//         if (connection) {
+//             try { await connection.close(); } catch (e) {}
+//         }
+//     }
+// });
+
+
 app.post('/api/auth/login', async (req: Request, res: Response) => {
     let { username, password, environment } = req.body;
     
-    // Check if payload is masked (Base64)
     if (req.body.payload) {
         try {
-            const decoded = JSON.parse(Buffer.from(req.body.payload, 'base64').toString());
+            // 1. Decode Base64
+            const decodedBase64 = Buffer.from(req.body.payload, 'base64').toString();
+            
+            // 2. Reverse XOR
+            const unmaskedJson = xorMask(decodedBase64, MASK_KEY);
+            
+            // 3. Parse JSON
+            const decoded = JSON.parse(unmaskedJson);
+            
             username = decoded.username;
             password = decoded.password;
             environment = decoded.environment;
@@ -46,61 +118,10 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Invalid payload format.' });
         }
     }
-
-    console.log(`[AUTH] SQL Login attempt for: ${username}`);
     
-    if (!username || !password || !environment) {
-        return res.status(400).json({ error: 'Username, password, and environment are required.' });
-    }
-
-    if (!isAllowedEnvironment(environment)) {
-        return res.status(400).json({ error: 'Invalid environment.' });
-    }
-
-    let connection;
-    try {
-        // Attempt to connect to Oracle to verify credentials
-        const connectionString = getOracleConnectionString(environment);
-        connection = await oracledb.getConnection({
-            user: username,
-            password: password,
-            connectString: connectionString
-        });
-        
-        console.log(`[AUTH] Success SQL login for: ${username}`);
-        
-        // Encrypt password for storage in JWT
-        const dbPassEnc = encrypt(password);
-        
-        const token = jwt.sign({ 
-            username: username, 
-            dbUser: username, 
-            dbPassEnc: dbPassEnc,
-            environment: environment
-        }, JWT_SECRET, { expiresIn: '8h' });
-        
-        res.cookie('token', token, { 
-            httpOnly: true, 
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 8 * 60 * 60 * 1000 // 8 hours
-        });
-        
-        res.json({ 
-            username: username, 
-            role: 'admin', 
-            permissions: ['read_only', 'create', 'delete'],
-            environment: environment
-        });
-    } catch (err) {
-        console.error(`[AUTH] Oracle Login Failed for ${username}:`, err);
-        res.status(401).json({ error: 'Invalid SQL credentials or database connection issue.', details: (err as Error).message });
-    } finally {
-        if (connection) {
-            try { await connection.close(); } catch (e) {}
-        }
-    }
+    // ... continue with your existing authentication logic
 });
+
 
 app.get('/api/auth/me', authMiddleware, (req: Request, res: Response) => {
     const user = (req as AuthenticatedRequest).user;

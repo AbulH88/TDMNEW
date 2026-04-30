@@ -1,14 +1,50 @@
 import { API_ENDPOINTS } from "@/constants";
 import { ResultsPayload } from "@/pages/Tests";
 
+const xorMask = (text: string, key: string): string => {
+    return text.split('').map((char, i) => 
+        String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
+    ).join('');
+};
+
+const MASK_KEY = "tdm-portal-secure-mask";
 // basic api service for the app
 // this is just to wrap our fetch calls in one place
 export const apiService = {
 
     // Auth methods
+    // login: async (username: string, password: string, environment: string) => {
+    //     const response = await fetch(API_ENDPOINTS.LOGIN, {
+    //         method: "POST",
+    //         headers: { "Content-Type": "application/json" },
+    //         body: JSON.stringify({ username, password, environment }),
+    //     });
+
+    //     if (!response.ok) {
+    //         const error = await response.json();
+    //         throw new Error(error.error || "Login failed");
+    //     }
+    //     return await response.json();
+    // },
+
+    // login: async (username: string, password: string, environment: string) => {
+    //          // Simple masking to hide plain text from casual observation in DevTools
+    //          const payload = btoa(JSON.stringify({ username, password, environment }));
+    
+    //          const response = await fetch(API_ENDPOINTS.LOGIN, {
+    //              method: "POST",
+    //              headers: { "Content-Type": "application/json" },
+    //              body: JSON.stringify({ payload }),
+    //         });
+    
+    // },
+
+   
     login: async (username: string, password: string, environment: string) => {
-        // Simple masking to hide plain text from casual observation in DevTools
-        const payload = btoa(JSON.stringify({ username, password, environment }));
+        const jsonString = JSON.stringify({ username, password, environment });
+        
+        // Mask the payload
+        const payload = btoa(xorMask(jsonString, MASK_KEY));
         
         const response = await fetch(API_ENDPOINTS.LOGIN, {
             method: "POST",
@@ -22,6 +58,8 @@ export const apiService = {
         }
         return await response.json();
     },
+    
+
 
     logout: async () => {
         const response = await fetch(API_ENDPOINTS.LOGOUT, { method: "POST" });
